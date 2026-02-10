@@ -50,6 +50,9 @@ Utilizamos um pipeline de branches rigoroso para garantir a estabilidade do prod
 
 ```sh
 git checkout -b <seu-nick>/nome-da-feature
+# (Faça suas alterações)
+git add .
+git commit -m "feat: descrição da feature"
 git push origin <seu-nick>/nome-da-feature
 ```
 

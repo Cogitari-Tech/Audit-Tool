@@ -1,81 +1,52 @@
-Cogitari Audit Tool 🛡️
-
-Ferramenta interna de auditoria técnica, compliance e gestão de riscos desenvolvida pela Cogitari Tech (CNPJ: 64.460.886/0001-39). Esta aplicação Single-Page (SPA) permite a criação ágil de relatórios de auditoria padronizados para os produtos da holding, com suporte a evidências visuais e sincronização direta com o Google Drive corporativo.
-
-🚀 Funcionalidades
-
-Registro Granular de Achados: Classificação individual de risco (Crítico, Alto, Médio, Baixo) e impacto (Segurança, Operacional, Jurídico, Privacidade).
-
-Gestão de Evidências: Upload de prints/imagens e inserção de links de referência (commits, tickets) diretamente no relatório.
-
-Workflow de Status: Acompanhamento do ciclo de vida da correção (Pendente, Em Andamento, Concluído, Bloqueado).
-
-Integração Google Drive: Conversão automática do relatório HTML para Google Docs editável na nuvem da Cogitari.
-
-Modo Offline: Geração de PDFs prontos para impressão diretamente pelo navegador (Ctrl+P).
-
-Segurança: Execução 100% client-side (nenhum dado passa por servidores intermediários, exceto Google APIs quando solicitado).
-
-🛠️ Stack Tecnológica
-
-Core: HTML5 Semântico, Vanilla JavaScript (ES6+).
-
-Estilização: TailwindCSS (via CDN).
-
-Integração Cloud: Google Identity Services (GIS) & Google Drive API v3.
-
-⚙️ Configuração e Instalação
-
-Como é uma ferramenta interna serverless, não requer npm install ou build steps complexos.
-
-Pré-requisitos
-
-Um navegador moderno (Chrome, Edge, Brave).
-
-Acesso ao Google Workspace da Cogitari (para sincronização com Drive).
-
-Setup Inicial (Desenvolvedores)
-
-Clone o repositório:
-
-git clone [https://github.com/cogitari-tech/Audit-Tool.git](https://github.com/cogitari-tech/Audit-Tool.git)
-
 # Cogitari Audit Tool 🛡️
 
-Ferramenta interna de auditoria técnica, compliance e gestão de riscos desenvolvida pela **Cogitari Tech** (CNPJ: 64.460.886/0001-39).
-Esta aplicação Single-Page (SPA) permite a criação ágil de relatórios de auditoria padronizados para os produtos da holding, com suporte a evidências visuais e sincronização direta com o Google Drive corporativo.
+Ferramenta oficial de auditoria técnica, compliance e gestão de riscos desenvolvida pela **Cogitari Tech** (CNPJ: 64.460.886/0001-39).
+Esta aplicação Single-Page (SPA) permite a criação ágil de relatórios de auditoria padronizados, garantindo rastreabilidade das ações dos auditores e impondo regras de negócio estritas para a geração de artefatos finais.
 
----
+## 🚀 Funcionalidades Principais
 
-## 🚀 Funcionalidades
+### 🔍 Motor de Auditoria
 
-- **Registro Granular de Achados:** Classificação individual de risco (Crítico, Alto, Médio, Baixo) e impacto (Segurança, Operacional, Jurídico, Privacidade).
-- **Gestão de Evidências:** Upload de prints/imagens e inserção de links de referência (commits, tickets) diretamente no relatório.
-- **Workflow de Status:** Acompanhamento do ciclo de vida da correção (Pendente, Em Andamento, Concluído, Bloqueado).
-- **Integração Google Drive:** Conversão automática do relatório HTML para Google Docs editável na nuvem da Cogitari.
-- **Modo Offline:** Geração de PDFs prontos para impressão diretamente pelo navegador (Ctrl+P).
-- **Segurança:** Execução 100% client-side (nenhum dado passa por servidores intermediários, exceto Google APIs quando solicitado).
+- **Registro Granular:** Classificação detalhada de achados por Risco (Crítico a Baixo), Status (Pendente a Bloqueado) e Impacto (Segurança, Operacional, Jurídico, Privacidade).
+- **Tipos de Task:** Categorização técnica para facilitar a criação de tickets (ex: Frontend Bug, Security Vuln, DevOps Failure).
+- **Evidências Ricas:** Suporte para upload de imagens (prints), inserção de links de referência e Blocos de Código/Logs com formatação dedicada.
 
----
+### 🔐 Compliance & Segurança (Regras de Negócio)
+
+- **Assinatura Viva (Traceability):** O relatório não pode ser gerado sem assinaturas. A assinatura é registrada automaticamente baseada na ação do auditor (editar, adicionar achado) ou manualmente via botão "Assinar Agora".
+- **Regra da Segunda-Feira:** A data final da auditoria ("Fim") é validada via código e deve obrigatoriamente ser uma Segunda-feira, alinhando-se aos ciclos de sprint da Cogitari.
+- **Bloqueio de Exportação:** O sistema impede a geração de PDF ou envio para o Drive se houver pendências de assinatura ou datas inválidas.
+
+### 💾 Persistência e Exportação
+
+- **Auto-Save Inteligente:** O estado da auditoria é salvo no localStorage a cada interação. O trabalho não é perdido se a aba for fechada.
+- **Google Drive Sync:** Integração via OAuth 2.0 para converter o relatório HTML em um Google Doc editável na nuvem da empresa.
+- **Geração de PDF:** Motor html2pdf.js para gerar arquivos imutáveis e prontos para assinatura digital final.
+- **Exportação Multi-Formato:** Suporte para saída em PDF, DOCX (HTML), TXT e JSON.
+
+### 🧪 Funcionalidades Beta (Mockups)
+
+- **Integração GitHub:** Interface simulada para conectar a auditoria a repositórios, branches e commits específicos da organização.
+- **Automação de E-mail:** Interface para notificação automática dos responsáveis técnicos por achado.
 
 ## 🛠️ Stack Tecnológica
 
+O projeto foi desenhado para ser agnóstico de infraestrutura (Serverless/Client-side only), garantindo portabilidade total.
+
 - **Core:** HTML5 Semântico, Vanilla JavaScript (ES6+)
-- **Estilização:** TailwindCSS (via CDN)
-- **Integração Cloud:** Google Identity Services (GIS) & Google Drive API v3
+- **UI Framework:** TailwindCSS (via CDN)
+- **Bibliotecas:**
+  - html2pdf.js: Renderização de PDF no cliente
+  - Google Identity Services (GIS): Autenticação e Drive API
 
----
-
-## ⚙️ Configuração e Instalação
-
-Como é uma ferramenta interna serverless, não requer `npm install` ou build steps complexos.
+## 💻 Configuração e Instalação
 
 ### Pré-requisitos
 
 - Um navegador moderno (Chrome, Edge, Brave)
-- Acesso ao Google Workspace da Cogitari (para sincronização com Drive)
+- Para a função "Salvar no Drive": Um Client ID do Google Cloud configurado
 
-### Setup Inicial (Desenvolvedores)
+### Setup Local
 
 Clone o repositório:
 
@@ -84,41 +55,38 @@ git clone https://github.com/cogitari-tech/Audit-Tool.git
 cd Audit-Tool
 ```
 
-#### Configuração do Client ID (Google Cloud):
+**Configuração de Credenciais (Opcional):**
+Para habilitar a sincronização com o Google Drive, edite o arquivo `src/auditoria_editor.html`:
 
-1. Abra o arquivo `src/index.html` (ou `auditoria_editor.html`).
-2. Localize a constante no final do script:
-   ```js
-   const CLIENT_ID = "SEU_CLIENT_ID_AQUI";
-   ```
-3. Insira o Client ID do projeto amuri-platform (GCP) autorizado para a origem local.
+```js
+// Linha ~680
+const CLIENT_ID = "SEU_CLIENT_ID_DO_GCP_AQUI";
+const SCOPES = "https://www.googleapis.com/auth/drive.file";
+```
 
-#### Execução
+> **Nota:** Sem o Client ID, a geração de PDF e o Auto-Save local continuam funcionando normalmente.
+
+### Execução
 
 - Abra o arquivo `.html` diretamente no navegador.
-- Ou use uma extensão como **Live Server** no VS Code para desenvolvimento.
+- **Recomendado:** Utilize a extensão Live Server no VS Code.
 
----
+## 📋 Fluxo de Utilização
 
-## 📦 Como Utilizar
-
-- **Preenchimento:** Insira os dados da auditoria e utilize o botão "+ Novo Achado" para registrar ocorrências.
-- **Evidências:** Anexe imagens de erro ou logs. Elas serão renderizadas no relatório final.
-
-### Exportação
-
-- **Salvar no Drive:** Clique para autenticar e gerar um Doc colaborativo.
-- **Gerar PDF:** Clique para baixar a versão imutável assinada digitalmente.
-
----
+1. **Início:** Preencha os dados do Cliente, Projeto e Datas.
+2. **Seleção de Auditor:** Selecione seu nome no campo "Auditor Ativo" no topo da página. Isso vinculará suas ações à sua assinatura.
+3. **Registro:** Utilize o botão "+ Novo Achado" para documentar ocorrências.
+4. Anexe prints.
+5. Cole logs de erro no bloco de código.
+6. Defina Risco e Impacto.
+7. **Validação:** Verifique se a seção "4. Assinaturas" no rodapé foi populada automaticamente com suas ações.
+8. **Exportação:** Clique em "Salvar" ou "PDF". O sistema validará as regras de compliance antes de liberar o arquivo.
 
 ## 🤝 Contribuição
 
-Este é um projeto interno. Mudanças estruturais no engine de auditoria devem ser discutidas com o CTO antes do merge. Consulte o arquivo [CONTRIBUTING.md](CONTRIBUTING.md) para diretrizes de código.
-
----
+Consulte o arquivo [CONTRIBUTING.md](CONTRIBUTING.md) para diretrizes sobre nosso fluxo de branches (`feature/* -> develop -> main`) e padrões de commit.
 
 ## 📄 Licença
 
-Proprietário. Copyright © 2026 Cogitari Tech (CNPJ: 64.460.886/0001-39). Todos os direitos reservados.
-A cópia, modificação ou distribuição não autorizada deste software é estritamente proibida.
+Proprietário. Copyright © 2026 Cogitari Tech (CNPJ: 64.460.886/0001-39).
+Ferramenta de uso interno restrito. A distribuição não autorizada é proibida.
