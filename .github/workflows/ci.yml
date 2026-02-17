@@ -1,10 +1,11 @@
 name: CI Pipeline
 
 on:
-  push:
-    branches: ["main", "develop", "moredev"]
   pull_request:
-    branches: ["main", "develop"]
+    types: [opened, synchronize, reopened]
+    branches:
+      - develop
+      - beta # Hotfixes
 
 jobs:
   build-and-test:
