@@ -19,13 +19,25 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/dist packages/*/dist"
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/dist packages/*/dist",
+    "prepare": "husky",
+    "security-check": "node scripts/security-scan.js"
+  },
+  "lint-staged": {
+    "*": [
+      "npm run security-check"
+    ],
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
     "@prisma/config": "^7.4.0",
     "@types/node": "^20.11.0",
     "dotenv": "^17.3.1",
     "eslint": "^8.56.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.2.4",
     "prisma": "^7.4.0",
     "supabase": "^2.76.9",
