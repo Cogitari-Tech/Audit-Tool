@@ -145,6 +145,13 @@ npm run build
 
 ---
 
+## 🤝 Contribuição e Segurança
+
+- Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para diretrizes de desenvolvimento.
+- Consulte [SECURITY.md](SECURITY.md) para política de segurança e report de vulnerabilidades.
+
+---
+
 ## 📁 Estrutura do Projeto
 
 ```
@@ -496,9 +503,7 @@ gh pr create --base main --head beta --title "Production Release v1.2.0"
 # .github/workflows/ci.yml
 on:
   pull_request:
-    branches: [develop, beta, main]
-  push:
-    branches: [develop, beta, main]
+    branches: [develop, beta] # Hotfixes & Features
 ```
 
 ---
