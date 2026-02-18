@@ -1,0 +1,250 @@
+// apps/web/src/infrastructure/repositories/SupabaseFinanceRepository.ts
+
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { 
+  IFinanceRepository, 
+  TrialBalanceEntry, 
+  IncomeStatementData 
+} from '@cogitari-platform/core/repositories/IFinanceRepository';
+import { Transaction } from '@cogitari-platform/core/entities/Transaction';
+import { Account } from '@cogitari-platform/core/entities/Account';
+
+/**
+ * Implementação concreta do repositório usando Supabase
+ */
+export class SupabaseFinanceRepository implements IFinanceRepository {
+  private supabase: SupabaseClient;
+
+  constructor(supabaseUrl: string, supabaseKey: string) {
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+  }
+
+  // === TRANSACTIONS ===
+
+  async saveTransaction(transaction: Transaction): Promise<void> {
+    const { error } = await this.supabase
+      .from('transactions')
+      .insert(transaction.toPersistence());
+
+    if (error) {
+      throw new Error(`Failed to save transaction: ${error.message}`);
+    }
+  }
+
+  async getTransactionById(id: string): Promise<Transaction | null> {
+    const { data, error } = await this.supabase
+      .from('transactions')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw new Error(`Failed to get transaction: ${error.message}`);
+    }
+
+    return Transaction.fromPersistence(data);
+  }
+
+  async getTransactionsByPeriod(
+    startDate: Date, 
+    endDate: Date
+  ): Promise<Transaction[]> {
+    const { data, error } = await this.supabase
+      .from('transactions')
+      .select('*')
+      .gte('date', startDate.toISOString().split('T')[0])
+      .lte('date', endDate.toISOString().split('T')[0])
+      .order('date', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to get transactions: ${error.message}`);
+    }
+
+    return data.map(Transaction.fromPersistence);
+  }
+
+  async getTransactionsByAccount(accountId: string): Promise<Transaction[]> {
+    const { data, error } = await this.supabase
+      .from('transactions')
+      .select('*')
+      .or(`account_debit_id.eq.${accountId},account_credit_id.eq.${accountId}`)
+      .order('date', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to get transactions: ${error.message}`);
+    }
+
+    return data.map(Transaction.fromPersistence);
+  }
+
+  async deleteTransaction(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete transaction: ${error.message}`);
+    }
+  }
+
+  // === ACCOUNTS ===
+
+  async getAccountById(id: string): Promise<Account | null> {
+    const { data, error } = await this.supabase
+      .from('accounts')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw new Error(`Failed to get account: ${error.message}`);
+    }
+
+    return Account.fromPersistence(data);
+  }
+
+  async getAllAccounts(): Promise<Account[]> {
+    const { data, error } = await this.supabase
+      .from('accounts')
+      .select('*')
+      .order('code', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to get accounts: ${error.message}`);
+    }
+
+    return data.map(Account.fromPersistence);
+  }
+
+  async createAccount(account: Account): Promise<void> {
+    const { error } = await this.supabase
+      .from('accounts')
+      .insert(account.toPersistence());
+
+    if (error) {
+      throw new Error(`Failed to create account: ${error.message}`);
+    }
+  }
+
+  async updateAccount(account: Account): Promise<void> {
+    const { error } = await this.supabase
+      .from('accounts')
+      .update(account.toPersistence())
+      .eq('id', account.id);
+
+    if (error) {
+      throw new Error(`Failed to update account: ${error.message}`);
+    }
+  }
+
+  async deleteAccount(id: string): Promise<void> {
+    // Primeiro verifica se há transações
+    const { count } = await this.supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .or(`account_debit_id.eq.${id},account_credit_id.eq.${id}`);
+
+    if (count && count > 0) {
+      throw new Error('Cannot delete account with existing transactions');
+    }
+
+    const { error } = await this.supabase
+      .from('accounts')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete account: ${error.message}`);
+    }
+  }
+
+  // === REPORTS ===
+
+  async getAccountBalance(accountId: string, date: Date): Promise<number> {
+    // Busca todas as transações até a data especificada
+    const transactions = await this.getTransactionsByAccount(accountId);
+    const filteredTransactions = transactions.filter(t => t.date <= date);
+
+    // Calcula saldo baseado no tipo de conta
+    const account = await this.getAccountById(accountId);
+    if (!account) throw new Error('Account not found');
+
+    let balance = 0;
+    for (const transaction of filteredTransactions) {
+      if (transaction.accountDebitId === accountId) {
+        // Natureza devedora: Ativo e Despesa
+        balance += account.isDebitNature() ? transaction.amount : -transaction.amount;
+      } else {
+        // Natureza credora: Passivo, Patrimônio e Receita
+        balance += account.isDebitNature() ? -transaction.amount : transaction.amount;
+      }
+    }
+
+    return balance;
+  }
+
+  async getTrialBalance(date: Date): Promise<TrialBalanceEntry[]> {
+    const accounts = await this.getAllAccounts();
+    const analyticalAccounts = accounts.filter(a => a.isAnalytical);
+
+    const entries: TrialBalanceEntry[] = [];
+
+    for (const account of analyticalAccounts) {
+      const balance = await this.getAccountBalance(account.id, date);
+      
+      entries.push({
+        accountCode: account.code,
+        accountName: account.name,
+        debitBalance: balance >= 0 ? balance : 0,
+        creditBalance: balance < 0 ? Math.abs(balance) : 0
+      });
+    }
+
+    return entries;
+  }
+
+  async getIncomeStatement(
+    startDate: Date, 
+    endDate: Date
+  ): Promise<IncomeStatementData> {
+    const transactions = await this.getTransactionsByPeriod(startDate, endDate);
+    const accounts = await this.getAllAccounts();
+
+    let revenue = 0;
+    let expenses = 0;
+    const revenueByCategory: Record<string, number> = {};
+    const expensesByCategory: Record<string, number> = {};
+
+    for (const transaction of transactions) {
+      const creditAccount = accounts.find(a => a.id === transaction.accountCreditId);
+      const debitAccount = accounts.find(a => a.id === transaction.accountDebitId);
+
+      // Receita (conta de receita no crédito)
+      if (creditAccount?.type === 'Receita') {
+        revenue += transaction.amount;
+        revenueByCategory[creditAccount.name] = 
+          (revenueByCategory[creditAccount.name] || 0) + transaction.amount;
+      }
+
+      // Despesa (conta de despesa no débito)
+      if (debitAccount?.type === 'Despesa') {
+        expenses += transaction.amount;
+        expensesByCategory[debitAccount.name] = 
+          (expensesByCategory[debitAccount.name] || 0) + transaction.amount;
+      }
+    }
+
+    return {
+      revenue,
+      expenses,
+      netIncome: revenue - expenses,
+      details: {
+        revenueByCategory,
+        expensesByCategory
+      }
+    };
+  }
+}
