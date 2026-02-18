@@ -11,30 +11,32 @@ Este repositório contém toda a especificação técnica para evolução da pla
 
 ### 📖 Documentos Principais
 
-| Documento | Descrição | Arquivo |
-|-----------|-----------|---------|
-| **ADR (Architecture Decision Record)** | Decisões arquiteturais finais, stack aprovada, MCPs necessários | `architecture-decision-record.md` |
-| **Estrutura do Projeto** | Organização completa de pastas, módulos e pacotes | `project-structure.md` |
-| **Guia de Migração** | Passo a passo para migrar do sistema legado | `migration-guide.md` |
+| Documento                              | Descrição                                                       | Arquivo                                |
+| -------------------------------------- | --------------------------------------------------------------- | -------------------------------------- |
+| **ADR (Architecture Decision Record)** | Decisões arquiteturais finais, stack aprovada, MCPs necessários | `docs/architecture-decision-record.md` |
+| **Estrutura do Projeto**               | Organização completa de pastas, módulos e pacotes               | `docs/project-structure.md`            |
+| **Guia de Migração**                   | Passo a passo para migrar do sistema legado                     | `docs/migration-guide.md`              |
+| **Workflow de Desenvolvimento**        | CI/CD, Testes e Segurança (Pre-commit)                          | `docs/development-workflow.md`         |
 
 ### 💻 Exemplos de Código
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `module-registry.ts` | Sistema de plugins para módulos dinâmicos |
-| `finance-module-config.ts` | Configuração do módulo financeiro |
-| `Transaction-entity.ts` | Entidade de domínio (DDD) |
-| `RecordTransaction-usecase.ts` | Caso de uso seguindo Clean Architecture |
-| `IFinanceRepository.ts` | Interface do repositório (Port) |
-| `SupabaseFinanceRepository.ts` | Implementação Supabase (Adapter) |
-| `useFinance-hook.ts` | Hook React customizado |
-| `CashFlow-component.tsx` | Componente completo de Fluxo de Caixa |
+| Arquivo                        | Descrição                                 |
+| ------------------------------ | ----------------------------------------- |
+| `module-registry.ts`           | Sistema de plugins para módulos dinâmicos |
+| `finance-module-config.ts`     | Configuração do módulo financeiro         |
+| `Transaction-entity.ts`        | Entidade de domínio (DDD)                 |
+| `RecordTransaction-usecase.ts` | Caso de uso seguindo Clean Architecture   |
+| `IFinanceRepository.ts`        | Interface do repositório (Port)           |
+| `SupabaseFinanceRepository.ts` | Implementação Supabase (Adapter)          |
+| `useFinance-hook.ts`           | Hook React customizado                    |
+| `CashFlow-component.tsx`       | Componente completo de Fluxo de Caixa     |
 
 ---
 
 ## 🎯 Stack Tecnológica (100% Gratuita para MVP)
 
 ### Frontend
+
 ```
 - React 18 + TypeScript
 - Vite 5 (build tool)
@@ -47,6 +49,7 @@ Este repositório contém toda a especificação técnica para evolução da pla
 ```
 
 ### Backend (Free Tier)
+
 ```
 - Supabase Free Tier
   ├─ PostgreSQL (500MB storage)
@@ -57,6 +60,7 @@ Este repositório contém toda a especificação técnica para evolução da pla
 ```
 
 ### DevOps (Free)
+
 ```
 - npm workspaces (monorepo, sem Turborepo)
 - Vitest (testes unitários)
@@ -93,6 +97,7 @@ npm install -D @playwright/test
 ## 🚀 Quick Start (5 minutos)
 
 ### Pré-requisitos
+
 ```bash
 node --version  # 20+
 npm --version   # 10+
@@ -182,6 +187,7 @@ Audit-Tool/                     # ⚠️ Repositório: https://github.com/Cogita
 ## 🧱 Princípios Arquiteturais
 
 ### 1. Clean Architecture
+
 ```
 Camadas (de fora para dentro):
 ┌──────────────────────────────┐
@@ -213,15 +219,17 @@ Adicionar novos módulos sem modificar o core:
 // 1. Criar módulo
 // apps/web/src/modules/hr/module.config.ts
 export const hrModuleConfig: ModuleConfig = {
-  id: 'hr',
-  name: 'RH',
-  routes: [/* ... */],
-  permissions: ['hr.view']
+  id: "hr",
+  name: "RH",
+  routes: [
+    /* ... */
+  ],
+  permissions: ["hr.view"],
 };
 
 // 2. Registrar
 // apps/web/src/modules/registry.ts
-import hrModule from './hr/module.config';
+import hrModule from "./hr/module.config";
 moduleRegistry.register(hrModule);
 
 // 3. Pronto! O módulo aparecerá automaticamente na sidebar
@@ -232,6 +240,7 @@ moduleRegistry.register(hrModule);
 ## 💰 Módulos Implementados
 
 ### 1. Auditoria (Legado Refatorado)
+
 - ✅ Criação de relatórios
 - ✅ Registro de achados
 - ✅ Sistema de assinaturas
@@ -240,6 +249,7 @@ moduleRegistry.register(hrModule);
 - ✅ Integração Google Drive
 
 ### 2. Financeiro (Novo)
+
 - 🆕 **Controle de Caixa**
   - Registro de transações (partida dobrada)
   - Gráfico de fluxo de caixa
@@ -254,6 +264,7 @@ moduleRegistry.register(hrModule);
   - Export para Excel
 
 ### 3. Compliance (Novo)
+
 - 🆕 **Análise SWOT**
   - Quadrantes interativos
   - Análise cruzada (FO, FA, DO, DA)
@@ -268,6 +279,7 @@ moduleRegistry.register(hrModule);
 ## 🧪 Estratégia de Testes
 
 ### Unit Tests (Vitest)
+
 ```bash
 # Testar lógica de negócio isoladamente
 npm test
@@ -280,12 +292,14 @@ npm run test:watch
 ```
 
 ### Integration Tests
+
 ```bash
 # Testar integração com Supabase
 npm run test:integration
 ```
 
 ### E2E Tests (Playwright)
+
 ```bash
 # Testar fluxos completos
 npm run test:e2e
@@ -304,6 +318,7 @@ npm run test:e2e -- --debug
 ## 🔒 Segurança
 
 ### Row Level Security (RLS)
+
 ```sql
 -- Usuários só veem seus próprios dados
 CREATE POLICY "Users see own audits"
@@ -323,18 +338,20 @@ CREATE POLICY "Admins see all"
 ```
 
 ### Sanitização de Inputs
+
 ```typescript
-import DOMPurify from 'isomorphic-dompurify';
+import DOMPurify from "isomorphic-dompurify";
 
 export const sanitize = (input: string): string => {
   return DOMPurify.sanitize(input, {
     ALLOWED_TAGS: [],
-    ALLOWED_ATTR: []
+    ALLOWED_ATTR: [],
   });
 };
 ```
 
 ### Validação de CNPJ
+
 ```typescript
 export const validateCNPJ = (cnpj: string): boolean => {
   // Algoritmo oficial da Receita Federal
@@ -348,12 +365,12 @@ export const validateCNPJ = (cnpj: string): boolean => {
 
 ### Targets
 
-| Métrica | Target | Ferramenta |
-|---------|--------|------------|
-| First Contentful Paint | <1.8s | Lighthouse |
-| Time to Interactive | <3.8s | Lighthouse |
-| Bundle Size | <200KB | Vite |
-| Lighthouse Score | >90 | CI |
+| Métrica                | Target | Ferramenta |
+| ---------------------- | ------ | ---------- |
+| First Contentful Paint | <1.8s  | Lighthouse |
+| Time to Interactive    | <3.8s  | Lighthouse |
+| Bundle Size            | <200KB | Vite       |
+| Lighthouse Score       | >90    | CI         |
 
 ### Otimizações Implementadas
 
@@ -378,6 +395,7 @@ main (produção) ← PR ← beta (homologação) ← PR ← develop (integraç�
 ### Fluxo Completo
 
 #### 1️⃣ Desenvolvimento Local
+
 ```bash
 # Criar branch local com seu nickname
 git checkout -b joao
@@ -391,6 +409,7 @@ git push origin joao
 ```
 
 #### 2️⃣ Integração (develop)
+
 ```bash
 # Abrir PR: joao → develop
 # ✅ GitHub Actions roda testes automatizados
@@ -399,12 +418,14 @@ git push origin joao
 ```
 
 **GitHub Actions (develop):**
+
 - ✅ Lint (ESLint + Prettier)
 - ✅ Type check (TypeScript)
 - ✅ Unit tests (Vitest)
 - ✅ Build test
 
 #### 3️⃣ Homologação (beta)
+
 ```bash
 # Abrir PR: develop → beta
 # ✅ Deploy automático para staging
@@ -413,10 +434,12 @@ git push origin joao
 ```
 
 **Ambiente Beta:**
+
 - 🌐 URL: `https://beta-audit-tool.vercel.app` (Vercel Free)
 - 🗄️ Database: Supabase project separado (Free Tier)
 
 #### 4️⃣ Correção de Bugs (hotfix)
+
 ```bash
 # Se encontrado bug em beta:
 git checkout -b hotfix/corrige-validacao
@@ -427,6 +450,7 @@ git push origin hotfix/corrige-validacao
 ```
 
 #### 5️⃣ Produção (main)
+
 ```bash
 # Abrir PR: beta → main
 # ✅ Aprovação do Tech Lead obrigatória
@@ -435,6 +459,7 @@ git push origin hotfix/corrige-validacao
 ```
 
 **Ambiente Produção:**
+
 - 🌐 URL: `https://app.cogitari.com.br` (Vercel Free + domínio custom)
 - 🗄️ Database: Supabase produção (Free Tier)
 
@@ -460,11 +485,13 @@ gh pr create --base main --head beta --title "Production Release v1.2.0"
 ### CI/CD Automático (GitHub Actions Free)
 
 **Limites Gratuitos:**
+
 - ✅ 2000 minutos/mês
 - ✅ Workflows ilimitados
 - ✅ Concurrent jobs: 20
 
 **Triggers:**
+
 ```yaml
 # .github/workflows/ci.yml
 on:
@@ -479,21 +506,25 @@ on:
 ## 🗺️ Roadmap
 
 ### ✅ Q1 2026 (Concluído)
+
 - [x] Análise do sistema legado
 - [x] Definição de arquitetura
 - [x] Setup do monorepo
 
 ### 🔄 Q2 2026 (Em Andamento)
+
 - [ ] Migração módulo Auditoria
 - [ ] Implementação módulo Financeiro
 - [ ] Testes automatizados
 
 ### 📅 Q3 2026 (Planejado)
+
 - [ ] Implementação módulo Compliance
 - [ ] Dashboard executivo
 - [ ] Mobile app (React Native)
 
 ### 🔮 Q4 2026 (Futuro)
+
 - [ ] Integração com ERPs (SAP, TOTVS)
 - [ ] IA para análise de riscos
 - [ ] Multi-tenancy (SaaS)
@@ -502,19 +533,21 @@ on:
 
 ## 👥 Equipe
 
-| Papel | Responsável | Email |
-|-------|-------------|-------|
-| CTO | @xXYoungMoreXx | morekaik27@gmail.com |
-| DevOps | @Wesbonf | devops@amuri.app |
+| Papel  | Responsável    | Email                |
+| ------ | -------------- | -------------------- |
+| CTO    | @xXYoungMoreXx | morekaik27@gmail.com |
+| DevOps | @Wesbonf       | devops@amuri.app     |
 
 ---
 
 ## 📞 Suporte
 
 ### Bugs e Issues
+
 🐛 GitHub Issues: https://github.com/Cogitari-Tech/Audit-Tool/issues
 
 ### Emergências
+
 📧 Email: devops@amuri.app
 
 ---
@@ -529,11 +562,13 @@ Uso interno restrito. Distribuição não autorizada é proibida.
 ## 🎓 Recursos de Aprendizado
 
 ### Vídeos
+
 - [ ] Arquitetura do Sistema (20min)
 - [ ] Como Criar um Módulo (15min)
 - [ ] Testes com Vitest e Playwright (25min)
 
 ### Documentação Externa
+
 - [Clean Architecture (Uncle Bob)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 - [Supabase Docs](https://supabase.com/docs)
 - [React Query Guide](https://tanstack.com/query/latest)
@@ -542,4 +577,4 @@ Uso interno restrito. Distribuição não autorizada é proibida.
 
 **Cogitari Tech** - Construindo o futuro da auditoria e gestão empresarial. 🚀
 
-*Última atualização: 16 de Fevereiro de 2026*
+_Última atualização: 16 de Fevereiro de 2026_
