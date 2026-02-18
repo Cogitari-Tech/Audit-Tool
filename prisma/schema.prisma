@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model accounts {
+  id            String   @id @default(uuid())
+  name          String
+  code          String
+  type          String
+  is_analytical Boolean  @map("is_analytical")
+  balance       Decimal  @default(0)
+  currency      String   @default("BRL")
+  created_at    DateTime @default(now())
+
+  // Relations
+  debit_transactions  transactions[] @relation("DebitAccount")
+  credit_transactions transactions[] @relation("CreditAccount")
+}
+
+model transactions {
+  id                String   @id @default(uuid())
+  date              DateTime @db.Date // Only date part as per code split('T')[0]
+  description       String
+  account_debit_id  String
+  account_credit_id String
+  amount            Decimal
+  created_by        String
+  created_at        DateTime @default(now())
+
+  // Relations
+  debit_account  accounts @relation("DebitAccount", fields: [account_debit_id], references: [id])
+  credit_account accounts @relation("CreditAccount", fields: [account_credit_id], references: [id])
+}
