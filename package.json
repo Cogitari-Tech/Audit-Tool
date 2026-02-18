@@ -41,6 +41,7 @@
     "prettier": "^3.2.4",
     "prisma": "^7.4.0",
     "supabase": "^2.76.9",
+    "rimraf": "^5.0.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
@@ -56,5 +57,8 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@prisma/client": "^6.19.2"
+  },
+  "overrides": {
+    "tar": "^7.5.9"
   }
 }
