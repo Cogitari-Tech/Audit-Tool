@@ -13,7 +13,23 @@
 
 ### Passo a passo
 
-#### 1.1 Criar credenciais OAuth no Google Cloud
+#### 1.1 Configurar Tela de Consentimento (OAuth Consent Screen)
+
+Antes de criar as credenciais, o Google exige a configuração da tela que será apresentada aos usuários no momento do login:
+
+1. Acesse **APIs & Services → OAuth consent screen** no Google Cloud Console
+2. Selecione **External** (ou **Internal** se todos os usuários pertencerem ao seu Google Workspace corporativo) e clique em **Create**
+3. Na etapa **OAuth consent screen**:
+   - **App name**: `Amuri Audit`
+   - **User support email**: Selecione o seu e-mail
+   - **App logo**: (Opcional) Faça upload do logo do Amuri Audit
+   - **Authorized domains**: Adicione `cogitari.com.br` e `supabase.co` (para os callbacks)
+   - **Developer contact information**: Seu e-mail ou e-mail da equipe
+4. Na etapa **Scopes**, não é necessário adicionar escopos extras, os padrões (`email`, `profile`, `openid`) são suficientes. Salve e continue.
+5. Na etapa **Test users**, adicione e-mails específicos (se o app estiver em modo 'Testing') ou pule se for publicar o app.
+6. Clique em **Back to Dashboard**. Se o app for `External` e estiver em modo `Testing`, lembre-se de clicar em **Publish App** antes de usar as credenciais em produção!
+
+#### 1.2 Criar credenciais OAuth no Google Cloud
 
 1. Acesse **APIs & Services → Credentials** no Google Cloud Console
 2. Clique em **Create Credentials → OAuth Client ID**
@@ -172,7 +188,18 @@ if (factors.totp.length > 0) {
 
 ## 4. Variáveis de Ambiente Necessárias
 
-Nenhuma variável adicional é necessária no `.env` do projeto frontend. Toda configuração OAuth é feita no Supabase Dashboard.
+> [!IMPORTANT]
+> **Para o login funcionar no frontend via Supabase Auth, NENHUMA variável de ambiente adicional (além de `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`) é obrigatória nos arquivos `.env`.** Toda a configuração OAuth deve ser feita no Supabase Dashboard.
+
+Adicionamos placeholders nos 4 arquivos `.env` (`.env`, `.env.beta`, `.env.production`, `.env.example`) apenas para uso futuro do backend ou integrações específicas. Você **só precisa preenchê-los se o backend exigir**.
+
+```env
+# --- OAUTH: GOOGLE & GITHUB  ---
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=
+# GITHUB_CLIENT_ID=
+# GITHUB_CLIENT_SECRET=
+```
 
 Para as **Edge Functions**, as variáveis já estão disponíveis automaticamente:
 
@@ -187,6 +214,13 @@ APP_URL=https://app.cogitari.com.br
 ```
 
 > Esta variável é usada pela Edge Function `send-invitation` para gerar links de convite. Se não definida, usa `https://app.cogitari.com.br` como fallback.
+
+---
+
+## 5. Automação via Google CLI (gcloud)
+
+Embora scripts de automação possam habilitar as APIs necessárias (ex: `gcloud services enable oauth2.googleapis.com`), a **Criação da Tela de Consentimento OAuth** e do **Client ID Web** exige iteração manual, pois o Google exige validação de domínio e e-mail de suporte (que, via terminal, frequentemente bloqueia por necessidade de verificação CAPTCHA ou login no navegador).
+Recomendamos a criação via Google Cloud Console (passos na seção 1).
 
 ---
 
