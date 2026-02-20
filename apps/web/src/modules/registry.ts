@@ -131,16 +131,19 @@ export async function initializeModules(): Promise<void> {
   const auditModule = await import('./audit/module.config');
   const financeModule = await import('./finance/module.config');
   const complianceModule = await import('./compliance/module.config');
+  const adminModule = await import('./admin/module.config');
 
   // Registro
   moduleRegistry.register(auditModule.default);
   moduleRegistry.register(financeModule.default);
   moduleRegistry.register(complianceModule.default);
+  moduleRegistry.register(adminModule.default);
 
   // Carregamento
   await moduleRegistry.load('audit');
   await moduleRegistry.load('finance');
   await moduleRegistry.load('compliance');
+  await moduleRegistry.load('admin');
 
   console.log('✅ Todos os módulos foram inicializados');
 }

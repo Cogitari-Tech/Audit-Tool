@@ -1,9 +1,6 @@
-feat(ui): complete financial UI overhaul and backend RPC integration
+feat(admin): add admin module, invitation edge functions, and OAuth/2FA docs
 
-- Refactored UI to use Glassmorphism and Claymorphism aesthetics
-- Implemented Dark Mode globally via ThemeToggle
-- Connected Cash Flow, Income Statement, and Balance Sheet to live Supabase backend via RPC
-- Fixed Tailwind @apply build errors by standardizing custom CSS shadow properties
-- Removed redundant mock data and updated component structures for real data
-
-Current State: Complete UI overhaul active, financial modules load live data, system builds successfully with no errors.
+- Deployed send-invitation and handle-invitation Edge Functions to Supabase
+- Created Admin module with TeamManagement, RoleManagement, and TenantSettings
+- Registered admin module in the module registry with lazy-loaded routes
+- Added OAuth (Google/GitHub) and 2FA (TOTP) setup documentation
