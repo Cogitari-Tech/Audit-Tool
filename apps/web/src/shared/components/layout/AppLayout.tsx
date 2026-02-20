@@ -56,7 +56,16 @@ export const AppLayout: React.FC = () => {
         <div className="h-full rounded-2xl glass-card relative overflow-hidden flex flex-col">
           {/* Header / Topbar Area inside main content if needed, or just outlet */}
           <div className="flex-1 overflow-auto p-8 custom-scrollbar">
-            <Outlet />
+            <React.Suspense fallback={
+              <div className="flex h-full items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Carregando módulo...</p>
+                </div>
+              </div>
+            }>
+              <Outlet />
+            </React.Suspense>
           </div>
         </div>
       </main>
