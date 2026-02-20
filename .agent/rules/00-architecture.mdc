@@ -1,0 +1,237 @@
+---
+description: "Regras de Clean Architecture (OBRIGATÓRIO EM TODAS AS TAREFAS)"
+alwaysApply: true
+---
+
+# 🏛️ REGRAS GLOBAIS DE ARQUITETURA - AMURI SAAS
+
+## Princípios Fundamentais
+
+### Clean Architecture (Camadas)
+- **Domain Layer** (src/domain/): Entidades, Value Objects, Regras de Negócio
+- **Application Layer** (src/application/): Use Cases, DTOs, Interfaces
+- **Infrastructure Layer** (src/infrastructure/): Implementações de APIs, DB, External Services
+- **Presentation Layer** (src/app/, src/components/): UI, Controllers
+
+### SOLID Principles
+- **Single Responsibility**: Cada módulo tem UMA razão para mudar
+- **Open/Closed**: Aberto para extensão, fechado para modificação
+- **Liskov Substitution**: Subtipos devem ser substituíveis por tipos base
+- **Interface Segregation**: Interfaces específicas > Interfaces genéricas
+- **Dependency Inversion**: Dependa de abstrações, não de implementações concretas
+
+### Domain-Driven Design (DDD)
+- **Bounded Contexts**: Cada módulo de integração (YouTube, TikTok) é um contexto isolado
+- **Aggregates**: User + Profile + Credits é um agregado
+- **Value Objects**: Email, CPF, APIKey devem ser Value Objects imutáveis
+- **Domain Events**: PublishSucceeded, CreditsPurchased, UserBanned
+
+## Estrutura de Pastas (OBRIGATÓRIA)
+
+src/
+├── app/                    # Next.js App Router (Presentation)
+├── components/             # UI Components
+│   ├── ui/                # shadcn/ui base components
+│   └── features/          # Feature-specific components
+├── lib/
+│   ├── domain/            # Domain Layer
+│   │   ├── entities/
+│   │   ├── value-objects/
+│   │   └── events/
+│   ├── application/       # Application Layer
+│   │   ├── use-cases/
+│   │   └── dtos/
+│   ├── infrastructure/    # Infrastructure Layer
+│   │   ├── db/           # Prisma, Supabase clients
+│   │   ├── integrations/ # YouTube, TikTok, etc.
+│   │   └── mcp/          # MCP servers
+│   └── utils/            # Helpers
+└── types/                 # TypeScript types
+
+## Nomenclatura (STRICT)
+
+### Arquivos
+- Componentes React: `PascalCase.tsx` (ex: `UserProfile.tsx`)
+- Hooks: `use-kebab-case.ts` (ex: `use-auth.ts`)
+- Utils: `kebab-case.ts` (ex: `format-date.ts`)
+- Types: `kebab-case.d.ts` (ex: `api-response.d.ts`)
+
+### Variáveis e Funções
+- Variáveis: `camelCase` (ex: `userId`, `creditsBalance`)
+- Constantes: `UPPER_SNAKE_CASE` (ex: `MAX_UPLOAD_SIZE`, `API_BASE_URL`)
+- Funções: `camelCase` com verbos (ex: `getUserProfile`, `validateEmail`)
+- Componentes: `PascalCase` (ex: `BuyCoinsButton`)
+
+### Database (Prisma Schema)
+- Tabelas: `snake_case` no plural (ex: `user_profiles`, `coin_transactions`)
+- Colunas: `snake_case` (ex: `created_at`, `credits_balance`)
+- Enums: `PascalCase` (ex: `UserRole`, `TransactionType`)
+
+## TypeScript (STRICT MODE)
+````typescript
+// tsconfig.json DEVE conter:
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
+}
+
+// ❌ NUNCA use 'any' sem justificativa explícita
+const data: any = {}; // ERRADO
+
+// ✅ Use tipos específicos ou unknown
+const data: UserProfile | null = null; // CORRETO
+````
+
+## Error Handling (OBRIGATÓRIO)
+````typescript
+// ✅ CORRETO: Sempre use Result Pattern ou throw tipado
+type Result<T> = 
+  | { success: true; data: T }
+  | { success: false; error: Error };
+
+async function fetchUser(id: string): Promise<Result<User>> {
+  try {
+    const user = await db.user.findUnique({ where: { id } });
+    if (!user) {
+      return { success: false, error: new Error('User not found') };
+    }
+    return { success: true, data: user };
+  } catch (error) {
+    return { success: false, error: error as Error };
+  }
+}
+
+// ❌ NUNCA retorne null ou undefined sem documentação
+async function getUser(id: string) {
+  return await db.user.findUnique({ where: { id } }); // EVITAR
+}
+````
+
+## Logging e Observabilidade
+````typescript
+// ✅ Use Sentry para errors críticos
+import * as Sentry from '@sentry/nextjs';
+
+try {
+  // operação crítica
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: { module: 'youtube-upload' },
+    extra: { userId, videoId }
+  });
+  throw error;
+}
+
+// ✅ Use console estruturado em dev
+console.log(JSON.stringify({
+  timestamp: new Date().toISOString(),
+  level: 'info',
+  module: 'auth',
+  message: 'User logged in',
+  userId: user.id
+}));
+````
+
+## ADRs (Architecture Decision Records)
+
+Toda decisão arquitetural DEVE ser documentada em `docs/adr/`:
+
+docs/
+└── adr/
+├── 001-context-sharding.md
+├── 002-landing-page-architecture.md
+├── 003-escolha-nextjs-app-router.md
+├── 004-supabase-vs-planetscale.md
+├── 005-modelo-byok-para-apis.md
+└── ...
+
+Formato:
+````markdown
+# ADR 001: Escolha do Next.js App Router
+
+**Status:** Aceito
+**Data:** 2026-01-16
+**Decisores:** @tech-team
+
+## Contexto
+Precisamos de SSR para SEO e performance na landing page...
+
+## Decisão
+Usar Next.js 14+ com App Router...
+
+## Consequências
+- ✅ Pros: SEO nativo, streaming...
+- ❌ Cons: Curva de aprendizado...
+````
+
+## Spec-Driven Development (SDD)
+
+ANTES de codificar qualquer feature:
+
+1. Criar arquivo `.spec.md` em `docs/specs/`
+2. Detalhar:
+   - Objetivo da feature
+   - Endpoints/APIs afetados
+   - Mudanças no schema do DB
+   - Casos de borda
+   - Testes necessários
+3. Revisar e aprovar
+4. ENTÃO implementar
+
+## Git Workflow
+````bash
+# Branches
+main              # Produção (protegido)
+├── staging       # Staging (auto-deploy)
+└── dev           # Desenvolvimento
+
+# Feature branches
+feature/user-auth
+fix/youtube-quota-error
+refactor/prisma-queries
+
+# Commits (Conventional Commits)
+feat: add YouTube upload with resumable protocol
+fix: handle 403 quota exceeded error
+docs: update ADR for BYOK strategy
+test: add e2e test for coin purchase flow
+````
+
+## Regras de Merge
+
+- ❌ NUNCA merge direto em `main` sem PR
+- ✅ PR deve ter:
+  - [ ] Testes passando (CI/CD green)
+  - [ ] Code review de 1+ dev
+  - [ ] Spec atualizada (se aplicável)
+  - [ ] ADR criado/atualizado (se decisão arquitetural)
+
+## Performance Budgets
+
+- Lighthouse Score mínimo: 90 (mobile)
+- First Contentful Paint: < 1.5s
+- Largest Contentful Paint: < 2.5s
+- Time to Interactive: < 3.5s
+- Cumulative Layout Shift: < 0.1
+
+## Segurança (NON-NEGOTIABLE)
+````typescript
+// ❌ NUNCA exponha secrets no cliente
+const API_KEY = "sk_live_xxxxx"; // PROIBIDO
+
+// ✅ Use variáveis de ambiente server-side
+// .env.local (NUNCA commitar)
+STRIPE_SECRET_KEY=sk_live_xxxxx
+
+// Server Component/API Route
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+````
+
+---
+
+**IMPORTANTE:** Estas regras são INEGOCIÁVEIS. Qualquer violação deve ser justificada em comentário de código ou ADR.
