@@ -1,5 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
-import { moduleRegistry, initializeModules } from "./modules/registry";
+import { moduleRegistry } from "./modules/registry";
 import { AppLayout } from "./shared/components/layout/AppLayout";
 import { AuthGuard } from "./modules/auth/components/AuthGuard";
 import { LoginPage } from "./modules/auth/pages/LoginPage";
@@ -8,10 +8,7 @@ import { AcceptInvitePage } from "./modules/auth/pages/AcceptInvitePage";
 import { TwoFactorChallenge } from "./modules/auth/pages/TwoFactorChallenge";
 import { TwoFactorSetup } from "./modules/auth/components/TwoFactorSetup";
 
-// Initialize modules before creating the router
-await initializeModules();
-
-export const router = createBrowserRouter([
+export const createAppRouter = () => createBrowserRouter([
   // Public Routes (no auth required)
   {
     path: "/login",
