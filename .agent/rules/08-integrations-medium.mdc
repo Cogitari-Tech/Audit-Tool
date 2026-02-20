@@ -1,0 +1,65 @@
+---
+description: Regras para integração com Medium API
+globs: src/lib/integrations/medium/**/*
+---
+# 📖 INTEGRAÇÃO MEDIUM
+
+## Contexto/Princípios
+A API do Medium é minimalista e focada em publicação "fire-and-forget".
+- **Draft Only**: A API não permite editar posts após publicação. A estratégia segura é sempre publicar como `draft` e deixar o usuário finalizar na plataforma.
+- **Token**: Usa Integration Tokens de longa duração, obtidos nas configurações do usuário.
+- **Rate Limit**: Não documentado oficialmente, mas agressivo contra spam.
+
+## Implementação
+
+### Criação de Post (Draft)
+```typescript
+// ✅ CORRETO: Publicação segura como rascunho
+async function createMediumDraft(
+  userId: string, 
+  token: string, 
+  content: BlogPost
+): Promise<Result<string>> {
+  // 1. Obter ID do usuário Medium (necessário para o endpoint de post)
+  const userResp = await fetch('https://api.medium.com/v1/me', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const userData = await userResp.json();
+  const mediumId = userData.data.id;
+
+  // 2. Criar Post
+  const postResp = await fetch(`https://api.medium.com/v1/users/${mediumId}/posts`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      title: content.title,
+      contentFormat: 'markdown', // Preferir Markdown a HTML
+      content: content.markdownBody,
+      publishStatus: 'draft',    // ⚠️ CRÍTICO: Sempre draft
+      tags: content.tags.slice(0, 5) // Limite de 5 tags
+    })
+  });
+
+  if (!postResp.ok) {
+    return Result.fail(`Erro Medium: ${postResp.statusText}`);
+  }
+
+  const postData = await postResp.json();
+  return Result.ok(postData.data.url);
+}
+```
+
+### ❌ ERRADO: Anti-padrões
+```typescript
+// ❌ Tentar editar post (API não suporta PUT/PATCH)
+// ❌ Enviar mais de 5 tags (API ignora ou retorna erro)
+// ❌ Publicar direto como 'public' sem revisão humana (risco de formatação quebrada)
+```
+
+## Edge Cases / Alertas
+- ⚠️ **Imagens**: A API do Medium automaticamente faz download de imagens linkadas no Markdown, mas isso pode falhar. Idealmente, use URLs públicas estáveis.
+- ⚠️ **Canonical URL**: Se for repost (cross-posting), sempre defina `canonicalUrl` para evitar penalidade de SEO (conteúdo duplicado).
+- 🚨 **Cota**: Erros 403 podem indicar token inválido ou conta suspensa por spam.

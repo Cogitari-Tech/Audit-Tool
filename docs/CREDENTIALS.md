@@ -118,3 +118,32 @@ MCP_LOG_LEVEL=info
 # Exemplo para servidor Postgres direto
 MCP_SERVER_POSTGRES_DSN=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
 ```
+
+---
+
+## 6. Configuração na Vercel (Deployment)
+
+Para que a aplicação funcione corretamente nos ambientes de Beta e Produção, as variáveis de ambiente devem ser configuradas no painel da Vercel.
+
+### Estratégia de Configuração
+
+Recomendamos configurar as variáveis separadamente para cada ambiente (`Preview` = Beta, `Production` = Prod) para garantir que a versão de testes não afete o banco de produção.
+
+| Variável                    | Tipo          | Ambientes               | Descrição                                           |
+| :-------------------------- | :------------ | :---------------------- | :-------------------------------------------------- |
+| `VITE_SUPABASE_URL`         | **Public**    | `Production`, `Preview` | URL do projeto Supabase (Diferente para Prod/Beta)  |
+| `VITE_SUPABASE_ANON_KEY`    | **Public**    | `Production`, `Preview` | Chave pública do Supabase                           |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Sensitive** | `Production`, `Preview` | (Opcional) Apenas se usar Server Functions/Actions  |
+| `MCP_SERVER_POSTGRES_DSN`   | **Sensitive** | `Production`, `Preview` | (Opcional) Apenas se usar conexão direta no Backend |
+
+### Passo a Passo
+
+1. Acesse o projeto na **Vercel**.
+2. Vá em **Settings** > **Environment Variables**.
+3. Adicione as variáveis:
+   - **Para Produção**:
+     - Copie do arquivo `.env.production`.
+     - Desmarque "Preview" e "Development". Mantenha apenas **Production**.
+   - **Para Beta (Preview)**:
+     - Copie do arquivo `.env.beta`.
+     - Desmarque "Production". Mantenha **Preview** (e Development se desejar usar o base de beta localmente).

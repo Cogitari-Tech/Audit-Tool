@@ -1,0 +1,70 @@
+---
+description: Regras globais de segurança, criptografia e compliance (LGPD/GDPR)
+alwaysApply: true
+globs: **/*
+---
+# 🛡️ SEGURANÇA E COMPLIANCE
+
+## Contexto/Princípios
+Como uma plataforma SaaS que armazena credenciais de terceiros (BYOK), segurança é a prioridade zero.
+- **Encryption**: AES-256-GCM para todas as chaves de API e tokens.
+- **Privacy**: Compliance total com LGPD (Brasil) e GDPR (Europa).
+- **Sanitization**: Zero trust para inputs de usuário (Zod validation).
+
+## Implementação
+
+### Criptografia de Credenciais (BYOK)
+```typescript
+// ✅ CORRETO: AES-256-GCM com IV único
+import { createCipheriv, randomBytes } from 'crypto';
+
+const ALGORITHM = 'aes-256-gcm';
+const MASTER_KEY = Buffer.from(process.env.ENCRYPTION_KEY, 'hex'); // 32 bytes
+
+export function encryptCredential(text: string): { iv: string, content: string, tag: string } {
+  const iv = randomBytes(16);
+  const cipher = createCipheriv(ALGORITHM, MASTER_KEY, iv);
+  
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  
+  return {
+    iv: iv.toString('hex'),
+    content: encrypted,
+    tag: cipher.getAuthTag().toString('hex')
+  };
+}
+```
+
+### Consentimento de Cookies (Bloqueante)
+```typescript
+// ✅ CORRETO: Só carregar scripts após consentimento explícito
+export function AnalyticsProvider({ children }) {
+  const { consent } = useCookieConsent();
+  
+  useEffect(() => {
+    if (consent === 'granted') {
+      loadGoogleAnalytics();
+      loadHotjar();
+    }
+  }, [consent]);
+
+  return <>{children}</>;
+}
+```
+
+### Sanitização de Inputs (Zod)
+```typescript
+// ✅ CORRETO: Validar e limpar inputs na borda
+const UserProfileSchema = z.object({
+  bio: z.string()
+    .max(500)
+    .transform((val) => DOMPurify.sanitize(val)), // Previne XSS
+  website: z.string().url().optional()
+});
+```
+
+## Edge Cases / Alertas
+- ⚠️ **CDC Art. 49**: Para clientes brasileiros, garantir botão de "Cancelar Assinatura/Arrependimento" visível e funcional (7 dias).
+- ⚠️ **Logs**: NUNCA logar tokens, senhas ou PII (Personal Identifiable Information) no console ou Sentry. Use mascaramento.
+- 🚨 **Fingerprinting**: Implementar detecção básica de abuso (mesmo IP criando 50 contas) usando Redis rate limiting na rota de signup.
