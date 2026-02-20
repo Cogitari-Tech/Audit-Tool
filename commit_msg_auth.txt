@@ -1,8 +1,0 @@
-feat(auth): implement multi-tenant authentication and RBAC system
-
-- Created database migrations for tenants, roles, permissions, and invitations
-- Implemented tenant-scoped RLS policies and system role seeding
-- Developed auth frontend module with AuthContext, AuthGuard, and PermissionGuard
-- Added Login, Forgot Password, and Invitation registration pages
-- Integrated auth session and permission filtering into the App router
-- Verified system stability with a successful production build
