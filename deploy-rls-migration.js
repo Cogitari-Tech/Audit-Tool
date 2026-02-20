@@ -11,10 +11,14 @@ const MIGRATION_SQL = fs.readFileSync(
   'utf8'
 );
 
+// DSNs must be provided via environment variables — NO hardcoded credentials.
+// Set these before running:
+//   $env:AUDIT_TOOL_BETA_DSN="postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres"
+//   $env:AUDIT_TOOL_PROD_DSN="postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres"
 const PROJECTS = [
   {
     name: 'audit-tool-beta',
-    dsn: process.env.AUDIT_TOOL_BETA_DSN || 'postgresql://postgres:audit-tool2026@db.grqhnhftseisxsobamju.supabase.co:5432/postgres',
+    dsn: process.env.AUDIT_TOOL_BETA_DSN,
   },
   {
     name: 'audit-tool-prod',

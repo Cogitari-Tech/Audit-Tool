@@ -1,3 +1,10 @@
-feat(auth): full TOTP 2FA implementation and routing guards
+fix(security): refine RLS migration for single-tenant audit-tool schema and add deploy runner
 
-Implements TwoFactorSetup component and two-step verification challenge. Wires Supabase MFA checks asynchronously into AuthGuard. Fixes Typescript warnings across frontend components. Embedded 2FA voluntary setup into Tenant Settings. Resolved windows compatibility issues in pipeline python scripts.
+Updates the accounts/transactions RLS migration to use valid PostgreSQL
+syntax (DROP + CREATE instead of CREATE IF NOT EXISTS) and aligns with the
+single-tenant audit-tool schema (no tenant_members table).
+
+Adds deploy-rls-migration.js that applies the migration directly to
+audit-tool-beta and audit-tool-prod via pg connection strings.
+
+Both databases have been patched successfully.
