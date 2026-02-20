@@ -50,7 +50,7 @@ export default function AuditDashboard() {
       case "Planejamento":
         return "text-amber-600 bg-amber-50 border-amber-200";
       case "Revisão":
-        return "text-purple-600 bg-purple-50 border-purple-200";
+        return "text-emerald-600 bg-emerald-50 border-emerald-200";
       case "Concluído":
         return "text-green-600 bg-green-50 border-green-200";
       default:
