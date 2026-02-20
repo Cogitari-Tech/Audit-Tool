@@ -31,14 +31,7 @@ O Supabase fornece o banco de dados PostgreSQL, autenticação e APIs em tempo r
 
 ---
 
-## 4. Google Cloud (Phase 2 - Deferred)
-
-**Status:** Adiado para a Fase 2 (Pós-MVP).
-A integração com Google Drive e Sheets foi removida do escopo inicial para simplificar a arquitetura.
-
-> Os placeholders `VITE_GOOGLE_CLIENT_ID` e relacionados foram removidos dos arquivos `.env` para evitar confusão.
-
----
+## 2. GitHub
 
 Necessário para que ferramentas de automação (MCP) e scripts interajam com o repositório.
 
@@ -78,9 +71,17 @@ Recomendamos um **Classic Token** para maior compatibilidade com ferramentas de 
    - `Actions`: Read and Write (se precisar rodar workflows)
    - `Pull Requests`: Read and Write
 
+## 3. Google Cloud (Em breve)
+
+**Status:** Programado (Pós-MVP).
+Em breve teremos a funcionalidade de **salvar os relatórios gerados diretamente no Google Drive**.
+Isto implicará possivelmente no uso de novas variáveis de ambiente, tais como `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS` (se usarmos um repositório centralizado da empresa) ou a adição de escopos extras ao Supabase (se usarmos o Drive do próprio auditor).
+
+> Para detalhes de configuração dos Aplicativos de Login Social (OAuth) atuais, consulte o arquivo `oauth-2fa-setup.md`.
+
 ---
 
-## 3. Estrutura dos Arquivos `.env`
+## 4. Estrutura dos Arquivos `.env`
 
 Cada arquivo deve seguir este padrão. Copie do `.env.example` e preencha.
 
@@ -121,20 +122,20 @@ MCP_SERVER_POSTGRES_DSN=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
 
 ---
 
-## 6. Configuração na Vercel (Deployment)
+## 6. Onde configurar cada variável? (Resumo Didático)
 
-Para que a aplicação funcione corretamente nos ambientes de Beta e Produção, as variáveis de ambiente devem ser configuradas no painel da Vercel.
+Para manter a segurança e a arquitetura limpa, é vital saber o destino correto de cada chave. Use esta tabela como guia definitivo separando o que vai para a nuvem da Vercel, o que vai para o Supabase e o que fica na sua máquina (arquivos `.env`).
 
-### Estratégia de Configuração
-
-Recomendamos configurar as variáveis separadamente para cada ambiente (`Preview` = Beta, `Production` = Prod) para garantir que a versão de testes não afete o banco de produção.
-
-| Variável                    | Tipo          | Ambientes               | Descrição                                           |
-| :-------------------------- | :------------ | :---------------------- | :-------------------------------------------------- |
-| `VITE_SUPABASE_URL`         | **Public**    | `Production`, `Preview` | URL do projeto Supabase (Diferente para Prod/Beta)  |
-| `VITE_SUPABASE_ANON_KEY`    | **Public**    | `Production`, `Preview` | Chave pública do Supabase                           |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Sensitive** | `Production`, `Preview` | (Opcional) Apenas se usar Server Functions/Actions  |
-| `MCP_SERVER_POSTGRES_DSN`   | **Sensitive** | `Production`, `Preview` | (Opcional) Apenas se usar conexão direta no Backend |
+| Variável / Credencial                                               | Onde Salvar?                                    | Segurança             | Ambiente                                     | Descrição e Motivo                                                                                                                        |
+| :------------------------------------------------------------------ | :---------------------------------------------- | :-------------------- | :------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
+| **`VITE_SUPABASE_URL`**                                             | Vercel e `.env`                                 | 🟢 Pública            | **Separado** (Preview e Prod)                | URL do projeto Supabase para que o site consiga encontrar o banco de dados.                                                               |
+| **`VITE_SUPABASE_ANON_KEY`**                                        | Vercel e `.env`                                 | 🟢 Pública            | **Separado** (Preview e Prod)                | Chave base pública. Permite que o React faça requisições limitadas pelo RLS.                                                              |
+| **`APP_URL`**                                                       | Vercel e `.env`                                 | 🟢 Pública            | **Separado** (Preview e Prod)                | Ex: `https://app.cogitari...` Usada pelas Edge Functions para saber redirecionar links em e-mails.                                        |
+| **OAuth Client IDs e Secrets** (Google/GitHub para Sign-in)         | **Apenas no Supabase** (Dashboard > Auth)       | 🔴 Secrets Protegidos | **Separado** (Dev e Prod independentes)      | Obrigatórios para permitir Login via Social. Quem lida com os provedores é a Supabase, **portanto NÃO adicione eles na Vercel**.          |
+| **Chaves de APIs de Terceiros** (Ex: Google Drive p/ salvar laudos) | **Apenas no Supabase** (Edge Functions Secrets) | 🔴 Secrets Protegidos | **Separado** (Cofre isolado em cada projeto) | Segredos usados pelos scripts de Edge Functions. Elas devem viver nos cofres do backend, longe do frontend da Vercel.                     |
+| **`SUPABASE_SERVICE_ROLE_KEY`**                                     | Apenas no `.env` corporativo                    | 🔴 Máxima (Sensitive) | **Separado** (Não misture chaves)            | Chave-Mestre de Administração que ignora barreiras de segurança (RLS). **Não adicione na Vercel** (a menos que crie um micro-backend lá). |
+| **`GITHUB_TOKEN`** (Automação MCP)                                  | Apenas no `.env` local                          | 🔴 Sensitive          | **Global** (Da sua conta pessoal)            | Token concedido para assistentes IA rodarem scripts no código e fazerem commits em seu nome.                                              |
+| **`MCP_SERVER_POSTGRES_DSN`**                                       | Apenas no `.env` local                          | 🔴 Máxima (Sensitive) | **Separado** (URL direta de Prod vs Beta)    | URL direta do superusuário no DB Postgres. Usada exclusivamente por IAs ou DBAs para rodar migrations/SQL brutos.                         |
 
 ### Passo a Passo
 
