@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
-import { supabase } from '../../../config/supabase';
-import { Button } from '../../../shared/components/ui/Button';
-import { Input } from '../../../shared/components/ui/Input';
-import { CheckCircle2, ShieldAlert, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import { supabase } from "../../../config/supabase";
+import { Button } from "../../../shared/components/ui/Button";
+import { Input } from "../../../shared/components/ui/Input";
+import { CheckCircle2, ShieldAlert, Loader2 } from "lucide-react";
 
 export function TwoFactorSetup() {
   const [factorId, setFactorId] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
-  const [verifyCode, setVerifyCode] = useState('');
-  const [error, setError] = useState('');
+  const [verifyCode, setVerifyCode] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
 
@@ -22,14 +22,16 @@ export function TwoFactorSetup() {
     try {
       const { data, error } = await supabase.auth.mfa.listFactors();
       if (error) throw error;
-      
+
       const totpFactors = data.totp || [];
-      const enrolled = totpFactors.some(factor => factor.status === 'verified');
+      const enrolled = totpFactors.some(
+        (factor) => factor.status === "verified",
+      );
       setIsEnrolled(enrolled);
-      
+
       if (enrolled) {
         // Find the verified factor ID
-        const verifiedFactor = totpFactors.find(f => f.status === 'verified');
+        const verifiedFactor = totpFactors.find((f) => f.status === "verified");
         if (verifiedFactor) {
           setFactorId(verifiedFactor.id);
         }
@@ -41,11 +43,11 @@ export function TwoFactorSetup() {
 
   const startEnrollment = async () => {
     setLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
       const { data, error } = await supabase.auth.mfa.enroll({
-        factorType: 'totp',
+        factorType: "totp",
       });
 
       if (error) throw error;
@@ -55,7 +57,7 @@ export function TwoFactorSetup() {
       setSecret(data.totp.secret);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Falha ao iniciar configuração do 2FA.');
+      setError(err.message || "Falha ao iniciar configuração do 2FA.");
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ export function TwoFactorSetup() {
     if (!factorId) return;
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       // Step 1: Challenge
@@ -85,7 +87,7 @@ export function TwoFactorSetup() {
       setIsEnrolled(true);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Código inválido. Tente novamente.');
+      setError(err.message || "Código inválido. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -94,20 +96,20 @@ export function TwoFactorSetup() {
   const unenroll = async () => {
     if (!factorId) return;
     setLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
       const { error } = await supabase.auth.mfa.unenroll({ factorId });
       if (error) throw error;
-      
+
       setIsEnrolled(false);
       setFactorId(null);
       setQrCode(null);
       setSecret(null);
-      setVerifyCode('');
+      setVerifyCode("");
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Falha ao desativar 2FA.');
+      setError(err.message || "Falha ao desativar 2FA.");
     } finally {
       setLoading(false);
     }
@@ -121,14 +123,19 @@ export function TwoFactorSetup() {
             <CheckCircle2 size={24} />
           </div>
           <div>
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white">Autenticação de Dois Fatores (2FA) Ativa</h3>
+            <h3 className="text-lg font-medium text-slate-900 dark:text-white">
+              Autenticação de Dois Fatores (2FA) Ativa
+            </h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Sua conta está mais segura. Um código será solicitado sempre que você fizer login.
+              Sua conta está mais segura. Um código será solicitado sempre que
+              você fizer login.
             </p>
             <div className="mt-4">
               <Button variant="danger" onClick={unenroll} disabled={loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Desativar 2FA
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                <span>Desativar 2FA</span>
               </Button>
             </div>
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
@@ -145,16 +152,21 @@ export function TwoFactorSetup() {
           <ShieldAlert size={24} />
         </div>
         <div className="flex-1">
-          <h3 className="text-lg font-medium text-slate-900 dark:text-white">Proteger Conta com 2FA</h3>
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white">
+            Proteger Conta com 2FA
+          </h3>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Adicione uma camada extra de segurança à sua conta exigindo um código do Google Authenticator ou Authy no login.
+            Adicione uma camada extra de segurança à sua conta exigindo um
+            código do Google Authenticator ou Authy no login.
           </p>
 
           {!qrCode ? (
             <div className="mt-4">
               <Button onClick={startEnrollment} disabled={loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Configurar 2FA (TOTP)
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                <span>Configurar 2FA (TOTP)</span>
               </Button>
               {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             </div>
@@ -165,21 +177,27 @@ export function TwoFactorSetup() {
                   <QRCodeSVG value={qrCode} size={160} />
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Ou use o código manual:</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Ou use o código manual:
+                  </p>
                   <code className="mt-1 block rounded bg-slate-100 px-2 py-1 text-xs font-medium dark:bg-slate-900">
                     {secret}
                   </code>
                 </div>
               </div>
-              
+
               <div className="flex-1">
                 <form onSubmit={verifyEnrollment} className="space-y-4">
                   <div>
-                    <label htmlFor="code" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <label
+                      htmlFor="code"
+                      className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                    >
                       Código de Verificação
                     </label>
                     <p className="mb-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      Escaneie o QR Code com o aplicativo Authy ou Google Authenticator e digite o código de 6 dígitos gerado.
+                      Escaneie o QR Code com o aplicativo Authy ou Google
+                      Authenticator e digite o código de 6 dígitos gerado.
                     </p>
                     <Input
                       id="code"
@@ -189,18 +207,20 @@ export function TwoFactorSetup() {
                       maxLength={6}
                       placeholder="000 000"
                       value={verifyCode}
-                      onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ''))}
+                      onChange={(e) =>
+                        setVerifyCode(e.target.value.replace(/\D/g, ""))
+                      }
                       className="text-center text-lg tracking-[0.5em]"
                       required
                     />
                   </div>
-                  
+
                   {error && <p className="text-sm text-red-600">{error}</p>}
-                  
+
                   <div className="flex justify-end gap-3">
-                    <Button 
-                      type="button" 
-                      variant="secondary" 
+                    <Button
+                      type="button"
+                      variant="secondary"
                       onClick={() => {
                         setQrCode(null);
                         setFactorId(null);
@@ -208,9 +228,14 @@ export function TwoFactorSetup() {
                     >
                       Cancelar
                     </Button>
-                    <Button type="submit" disabled={verifyCode.length !== 6 || loading}>
-                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Ativar e Verificar
+                    <Button
+                      type="submit"
+                      disabled={verifyCode.length !== 6 || loading}
+                    >
+                      {loading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
+                      <span>Ativar e Verificar</span>
                     </Button>
                   </div>
                 </form>
