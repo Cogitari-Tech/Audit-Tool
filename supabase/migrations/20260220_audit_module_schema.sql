@@ -4,6 +4,54 @@
 -- ==========================================================
 
 -- ============================================================
+-- 0. PREREQUISITES: tenants + tenant_members (multi-tenant infra)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS tenants (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name        TEXT NOT NULL,
+    slug        TEXT UNIQUE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "tenants_select" ON tenants;
+CREATE POLICY "tenants_select" ON tenants
+    FOR SELECT TO authenticated
+    USING (id IN (SELECT tm.tenant_id FROM tenant_members tm WHERE tm.user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "tenants_all_service" ON tenants;
+CREATE POLICY "tenants_all_service" ON tenants
+    FOR ALL TO service_role
+    USING (true) WITH CHECK (true);
+
+CREATE TABLE IF NOT EXISTS tenant_members (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id   UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id     UUID NOT NULL,
+    role        TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner','admin','auditor','member','viewer')),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(tenant_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tm_user ON tenant_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_tm_tenant ON tenant_members(tenant_id);
+
+ALTER TABLE tenant_members ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "tm_select" ON tenant_members;
+CREATE POLICY "tm_select" ON tenant_members
+    FOR SELECT TO authenticated
+    USING (user_id = auth.uid() OR tenant_id IN (
+        SELECT tm2.tenant_id FROM tenant_members tm2 WHERE tm2.user_id = auth.uid()
+    ));
+
+DROP POLICY IF EXISTS "tm_all_service" ON tenant_members;
+CREATE POLICY "tm_all_service" ON tenant_members
+    FOR ALL TO service_role
+    USING (true) WITH CHECK (true);
+-- ============================================================
 -- 1. audit_frameworks — Reference frameworks (LGPD, GDPR, ISO)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS audit_frameworks (
