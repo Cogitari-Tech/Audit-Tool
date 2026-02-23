@@ -1,0 +1,249 @@
+---
+description: "YouTube Data API v3, Quota, Upload Resumível"
+globs:
+  - "src/lib/integrations/youtube/**"
+  - "src/infrastructure/integrations/youtube/**"
+  - "**/youtube*.ts"
+---
+
+# 📺 INTEGRAÇÃO YOUTUBE DATA API V3
+
+## Contexto Crítico (ATUALIZADO DEZEMBRO 2025)
+
+### Nova Cota de Upload
+- **CUSTO ATUALIZADO:** Upload de vídeo = ~100 unidades (era 1.600)
+- **Cota Padrão:** 10.000 unidades/dia por projeto
+- **Capacidade:** ~100 uploads/dia (vs. 6 anteriormente)
+
+## Modelo BYOK (Bring Your Own Key) - OBRIGATÓRIO
+````typescript
+// ✅ Fluxo: Usuário conecta própria Google Cloud Account
+interface YouTubeCredentials {
+  userId: string;
+  clientId: string; // Criptografado no DB
+  clientSecret: string; // Criptografado no DB
+  refreshToken: string; // Criptografado no DB
+  accessToken?: string; // Cache temporário
+  expiresAt?: Date;
+}
+
+// Função de armazenamento seguro
+async function saveUserCredentials(userId: string, credentials: YouTubeCredentials) {
+  const encrypted = {
+    client_id: encryptApiKey(credentials.clientId),
+    client_secret: encryptApiKey(credentials.clientSecret),
+    refresh_token: encryptApiKey(credentials.refreshToken),
+  };
+
+  await prisma.youtubeCredentials.create({
+    data: {
+      user_id: userId,
+      ...encrypted,
+    },
+  });
+}
+````
+
+## Tratamento de Erros de Quota (403)
+````typescript
+// ✅ Detectar e enfileirar para próximo dia
+async function uploadVideo(videoData: VideoData, userId: string) {
+  try {
+    const response = await youtube.videos.insert({
+      part: ['snippet', 'status'],
+      requestBody: {
+        snippet: {
+          title: videoData.title,
+          description: videoData.description,
+          tags: videoData.tags,
+        },
+        status: {
+          privacyStatus: 'public',
+        },
+      },
+      media: {
+        body: videoData.stream,
+      },
+    });
+
+    return { success: true, videoId: response.data.id };
+  } catch (error: any) {
+    if (error.code === 403 && error.message.includes('quota')) {
+      // Enfileirar para próximo dia (reset às 00:00 Pacific Time)
+      await queueVideoUpload({
+        userId,
+        videoData,
+        scheduledFor: getNextQuotaReset(),
+      });
+
+      return {
+        success: false,
+        error: 'Daily quota exceeded. Upload queued for tomorrow.',
+        retryAt: getNextQuotaReset(),
+      };
+    }
+
+    throw error;
+  }
+}
+
+function getNextQuotaReset(): Date {
+  const now = new Date();
+  const pacificTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  
+  const tomorrow = new Date(pacificTime);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  
+  return tomorrow;
+}
+````
+
+## Upload Resumível (Resumable Upload Protocol)
+````typescript
+// ✅ Implementar para vídeos grandes (>5MB)
+import { google } from 'googleapis';
+import fs from 'fs';
+
+async function resumableUpload(filePath: string, metadata: any, credentials: YouTubeCredentials) {
+  const auth = new google.auth.OAuth2(
+    credentials.clientId,
+    credentials.clientSecret
+  );
+  auth.setCredentials({ refresh_token: credentials.refreshToken });
+
+  const youtube = google.youtube({ version: 'v3', auth });
+
+  const fileSize = fs.statSync(filePath).size;
+  const media = {
+    mimeType: 'video/*',
+    body: fs.createReadStream(filePath),
+  };
+
+  try {
+    const response = await youtube.videos.insert(
+      {
+        part: ['snippet', 'status'],
+        requestBody: metadata,
+        media,
+      },
+      {
+        // Configurar upload resumível
+        onUploadProgress: (evt) => {
+          const progress = (evt.bytesRead / fileSize) * 100;
+          console.log(`Upload progress: ${progress.toFixed(2)}%`);
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    // Se falhar, salvar progresso e permitir retomada
+    if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+      // Salvar estado de upload
+      await saveUploadState({
+        userId: credentials.userId,
+        uploadUrl: error.config?.url,
+        bytesUploaded: error.bytesUploaded,
+      });
+    }
+
+    throw error;
+  }
+}
+````
+
+## Compliance: Marcação de Conteúdo IA
+````typescript
+// ✅ Marcar vídeos gerados por IA (YouTube Policy 2025)
+const videoMetadata = {
+  snippet: {
+    title: 'AI Generated Video',
+    description: `
+      🤖 This content was generated using AI.
+      
+      ${userDescription}
+    `,
+    tags: ['ai-generated', ...userTags],
+  },
+  status: {
+    privacyStatus: 'public',
+    madeForKids: false,
+    selfDeclaredMadeForKids: false,
+  },
+  // ⚠️ IMPORTANTE: Disclosure de IA
+  contentDetails: {
+    aiGeneratedDisclosure: true, // Flag futura (preparar para)
+  },
+};
+````
+
+## Rate Limiting por Usuário
+````typescript
+// ✅ Rastrear uso de quota por usuário (BYOK)
+async function trackQuotaUsage(userId: string, unitsUsed: number) {
+  await prisma.quotaUsage.upsert({
+    where: {
+      user_id_date: {
+        user_id: userId,
+        date: new Date().toISOString().split('T')[0],
+      },
+    },
+    update: {
+      units_used: {
+        increment: unitsUsed,
+      },
+    },
+    create: {
+      user_id: userId,
+      date: new Date(),
+      units_used: unitsUsed,
+    },
+  });
+}
+
+// Verificar antes de upload
+async function canUpload(userId: string): Promise<boolean> {
+  const today = new Date().toISOString().split('T')[0];
+  const usage = await prisma.quotaUsage.findUnique({
+    where: {
+      user_id_date: {
+        user_id: userId,
+        date: today,
+      },
+    },
+  });
+
+  const UPLOAD_COST = 100; // Custo atual de upload
+  const DAILY_LIMIT = 10000; // Cota padrão
+
+  return !usage || (usage.units_used + UPLOAD_COST <= DAILY_LIMIT);
+}
+````
+
+## Auditoria de Conformidade (Para Aumento de Quota)
+````typescript
+// ✅ Preparar documentação para solicitar aumento de quota
+const COMPLIANCE_CHECKLIST = `
+Antes de solicitar aumento de quota no Google Cloud:
+
+1. ✅ Política de Privacidade publicada em amuri.app/privacy
+2. ✅ Termos de Serviço publicados em amuri.app/terms
+3. ✅ OAuth consent screen configurado (Externo)
+4. ✅ Funcionalidade de download de vídeos DESABILITADA
+5. ✅ Moderação de conteúdo implementada (anti-spam)
+6. ✅ Sistema de denúncia de abuso
+7. ✅ Conformidade com YouTube ToS explícita nos Termos
+
+Acesse: https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas
+Clique em "Request Quota Increase"
+Justifique: Plataforma de criadores com modelo BYOK
+`;
+````
+
+---
+
+**IMPORTANTE:** 
+- Upload = 100 unidades (atualizado 04/12/2025)
+- BYOK é essencial para escala
+- Implementar upload resumível OBRIGATÓRIO

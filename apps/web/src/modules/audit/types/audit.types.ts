@@ -1,0 +1,164 @@
+export interface AuditFramework {
+  id: string;
+  tenant_id: string | null;
+  name: string;
+  description: string | null;
+  version: string | null;
+  is_system: boolean;
+  created_at: string;
+}
+
+export interface AuditFrameworkControl {
+  id: string;
+  framework_id: string;
+  code: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  sort_order: number;
+}
+
+export type AuditProgramFrequency =
+  | "annual"
+  | "semi_annual"
+  | "quarterly"
+  | "monthly"
+  | "biweekly"
+  | "weekly";
+
+export type AuditProgramStatus =
+  | "draft"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
+
+export interface AuditProgram {
+  id: string;
+  tenant_id: string;
+  name: string;
+  description: string | null;
+  framework_id: string | null;
+  frequency: AuditProgramFrequency;
+  status: AuditProgramStatus;
+  start_date: string | null;
+  end_date: string | null;
+  responsible_id: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  framework?: AuditFramework;
+}
+
+export type ChecklistItemStatus =
+  | "pending"
+  | "compliant"
+  | "non_compliant"
+  | "not_applicable";
+
+export interface AuditProgramChecklist {
+  id: string;
+  program_id: string;
+  control_id: string | null;
+  title: string;
+  description: string | null;
+  status: ChecklistItemStatus;
+  notes: string | null;
+  checked_by: string | null;
+  checked_at: string | null;
+  sort_order: number;
+  // Joined
+  control?: AuditFrameworkControl;
+}
+
+export type FindingRiskLevel = "critical" | "high" | "medium" | "low";
+export type FindingStatus = "open" | "in_progress" | "resolved" | "accepted";
+
+export interface AuditFinding {
+  id: string;
+  program_id: string;
+  checklist_item_id: string | null;
+  title: string;
+  description: string | null;
+  risk_level: FindingRiskLevel;
+  status: FindingStatus;
+  due_date: string | null;
+  assigned_to: string | null;
+  created_by: string;
+  created_at: string;
+  resolved_at: string | null;
+  // Joined
+  program?: AuditProgram;
+}
+
+export type EvidenceType = "document" | "screenshot" | "log" | "link";
+
+export interface AuditEvidence {
+  id: string;
+  finding_id: string | null;
+  checklist_item_id: string | null;
+  type: EvidenceType;
+  title: string;
+  description: string | null;
+  url: string | null;
+  uploaded_by: string;
+  created_at: string;
+}
+
+export type ActionPlanStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "overdue";
+export type ActionPlanPriority = "critical" | "high" | "medium" | "low";
+
+export interface AuditActionPlan {
+  id: string;
+  finding_id: string;
+  title: string;
+  description: string | null;
+  status: ActionPlanStatus;
+  priority: ActionPlanPriority;
+  assigned_to: string | null;
+  due_date: string | null;
+  completed_at: string | null;
+  created_by: string;
+  created_at: string;
+  // Joined
+  finding?: AuditFinding;
+}
+
+// Form inputs
+export interface CreateProgramInput {
+  name: string;
+  description?: string;
+  framework_id?: string;
+  frequency: AuditProgramFrequency;
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface CreateFindingInput {
+  program_id: string;
+  checklist_item_id?: string;
+  title: string;
+  description?: string;
+  risk_level: FindingRiskLevel;
+  due_date?: string;
+}
+
+export interface CreateActionPlanInput {
+  finding_id: string;
+  title: string;
+  description?: string;
+  priority: ActionPlanPriority;
+  due_date?: string;
+}
+
+// Dashboard stats
+export interface AuditDashboardStats {
+  activePrograms: number;
+  highRiskFindings: number;
+  complianceRate: number;
+  pendingActionPlans: number;
+}

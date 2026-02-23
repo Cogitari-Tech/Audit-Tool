@@ -1,0 +1,63 @@
+---
+description: Padrões de testes automatizados (E2E, Unit, Integration)
+globs: tests/**/*, e2e/**/*
+---
+# 🧪 TESTES E QA
+
+## Contexto/Princípios
+Garantir a estabilidade do SaaS com uma pirâmide de testes equilibrada.
+- **E2E (Playwright)**: Fluxos críticos do usuário (Signup, Post Creation, Billing).
+- **Unit (Vitest)**: Regras de negócio, utilitários, hooks isolados.
+- **BDD**: Testes descritivos (Describe -> It -> Expect).
+- **Shadow Mode**: Testar integrações em modo "dry-run" quando possível.
+
+## Implementação
+
+### Teste E2E (Playwright)
+```typescript
+// ✅ CORRETO: Seletores resilientes e assertions claras
+test('usuário deve conseguir criar um post rascunho', async ({ page }) => {
+  // Arrange
+  await page.goto('/dashboard/create');
+  
+  // Act
+  await page.getByTestId('input-title').fill('Meu Novo Post');
+  await page.getByTestId('editor-content').fill('Conteúdo incrível...');
+  await page.getByTestId('btn-save-draft').click();
+  
+  // Assert
+  await expect(page.getByText('Rascunho salvo com sucesso')).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard\/content/);
+});
+```
+
+### Teste Unitário (Vitest)
+```typescript
+// ✅ CORRETO: Testando regra de negócio isolada
+import { calculatePostCost } from './billing';
+
+describe('Billing Logic', () => {
+  it('should charge 1 credit for text posts', () => {
+    const cost = calculatePostCost({ type: 'text' });
+    expect(cost).toBe(1);
+  });
+
+  it('should charge 10 credits for video generation', () => {
+    const cost = calculatePostCost({ type: 'video_ai' });
+    expect(cost).toBe(10);
+  });
+});
+```
+
+### Mocking Externos
+```typescript
+// ✅ CORRETO: Mockar API externa para não gastar cota/dinheiro
+vi.mock('@/lib/integrations/youtube', () => ({
+  uploadVideo: vi.fn().mockResolvedValue(Result.ok('video_id_123'))
+}));
+```
+
+## Edge Cases / Alertas
+- ⚠️ **data-testid**: Sempre adicione `data-testid="nome-elemento"` em elementos interativos importantes para desacoplar testes do CSS/estrutura.
+- ⚠️ **Flakiness**: Evite `waitForTimeout(5000)`. Use `await expect(...).toBeVisible()` ou `waitForLoadState('networkidle')`.
+- 🚨 **Clean State**: Testes E2E devem rodar em banco isolado ou limpar dados após execução (teardown).
