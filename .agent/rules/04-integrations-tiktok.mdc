@@ -1,0 +1,185 @@
+---
+description: "TikTok API, Shadowban, AIGC Disclosure"
+globs:
+  - "src/lib/integrations/tiktok/**"
+  - "src/infrastructure/integrations/tiktok/**"
+  - "**/tiktok*.ts"
+---
+
+# 🎵 INTEGRAÇÃO TIKTOK CONTENT POSTING API
+
+## Risco: Shadowban e Redução de Alcance
+
+### Contexto
+Vídeos postados via API têm alcance 30-70% menor que posts manuais SE não seguirem boas práticas.
+
+## Estratégia "Human-Hybrid" (OBRIGATÓRIA)
+````typescript
+// ✅ PADRÃO: Enviar como DRAFT, não Direct Post
+async function postToTikTok(videoData: VideoData, userId: string) {
+  const response = await tiktokClient.post('/v2/post/publish/video/init/', {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      post_info: {
+        title: videoData.title,
+        privacy_level: 'SELF_ONLY', // ⚠️ Draft mode
+        disable_duet: false,
+        disable_comment: false,
+        disable_stitch: false,
+        video_cover_timestamp_ms: 1000,
+      },
+      source_info: {
+        source: 'FILE_UPLOAD',
+        video_url: videoData.uploadUrl,
+      },
+      post_mode: 'DIRECT_POST', // Ou 'CREATOR_UPLOAD'
+      media_type: 'VIDEO',
+      // 🚨 OBRIGATÓRIO: Marcar IA
+      is_aigc: true, // AI-generated content disclosure
+    }),
+  });
+
+  // Notificar usuário para publicar manualmente
+  await sendPushNotification(userId, {
+    title: 'Seu vídeo está pronto no TikTok!',
+    body: 'Adicione um sticker ou áudio trending para maximizar alcance',
+    action: 'OPEN_TIKTOK_DRAFTS',
+  });
+
+  return response;
+}
+````
+
+## Algoritmo de Jitter (Anti-Detecção)
+````typescript
+// ✅ Adicionar variação aleatória nos agendamentos
+function scheduleWithJitter(scheduledTime: Date): Date {
+  const JITTER_RANGE = 15 * 60 * 1000; // ±15 minutos em ms
+  const jitter = Math.random() * JITTER_RANGE * 2 - JITTER_RANGE;
+  
+  return new Date(scheduledTime.getTime() + jitter);
+}
+
+// Uso
+const scheduledTime = new Date('2026-01-20T14:00:00Z');
+const actualTime = scheduleWithJitter(scheduledTime);
+// Resultado: algo entre 13:45 e 14:15 (aleatório)
+````
+
+## Compliance: Marcação Obrigatória de IA
+````typescript
+// 🚨 CRÍTICO: Flag is_aigc é OBRIGATÓRIA para conteúdo IA
+const postPayload = {
+  post_info: {
+    title: videoData.title,
+    privacy_level: videoData.isPublic ? 'PUBLIC_TO_EVERYONE' : 'SELF_ONLY',
+  },
+  // ⚠️ NUNCA omitir esta flag
+  is_aigc: true, // AI-generated content disclosure
+  
+  // Se for conteúdo comercial/promocional
+  disclose_commercial_content: videoData.isCommercial || false,
+};
+
+// ❌ Omitir is_aigc pode resultar em:
+// - Redução de alcance de até 73%
+// - Remoção do vídeo
+// - Suspensão da API
+````
+
+## Auditoria de Aplicação (Para Modo Público)
+````typescript
+// ⚠️ Apps não-auditados só podem postar em modo PRIVADO
+// Para permitir postagem pública, o app deve passar por auditoria
+
+const AUDIT_REQUIREMENTS = `
+Para solicitar auditoria do TikTok:
+
+1. ✅ Aplicação funcional com histórico de uploads
+2. ✅ Política de Privacidade pública
+3. ✅ Termos de Uso claros
+4. ✅ Funcionalidades OBRIGATÓRIAS na UI:
+   - Usuário DEVE poder escolher privacidade (não pode ser padrão)
+   - Usuário DEVE poder habilitar/desabilitar comentários
+   - Usuário DEVE poder habilitar/desabilitar duetos/stitch
+5. ✅ PROIBIDO adicionar marcas d'água automáticas
+6. ✅ PROIBIDO adicionar links promocionais no vídeo
+
+Processo:
+- Acesse TikTok Developer Portal
+- Submit app para Content Posting API Review
+- Aguarde 2-4 semanas
+- Demonstre casos de uso legítimos
+`;
+````
+
+## Rate Limiting
+````typescript
+// ✅ Limites da API (por usuário)
+const TIKTOK_LIMITS = {
+  videosPerDay: 20, // Limite conservador
+  videosPerWeek: 100,
+  maxVideoSize: 4 * 1024 * 1024 * 1024, // 4GB
+  maxDuration: 10 * 60, // 10 minutos (em segundos)
+};
+
+async function canPostToTikTok(userId: string): Promise<boolean> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const postsToday = await prisma.tiktokPost.count({
+    where: {
+      user_id: userId,
+      created_at: {
+        gte: today,
+      },
+    },
+  });
+
+  return postsToday < TIKTOK_LIMITS.videosPerDay;
+}
+````
+
+## Restrições de Conteúdo
+````typescript
+// ✅ Validar antes de upload
+function validateTikTokVideo(videoData: VideoData): ValidationResult {
+  const errors: string[] = [];
+
+  // Duração
+  if (videoData.duration > TIKTOK_LIMITS.maxDuration) {
+    errors.push(`Video too long. Max: ${TIKTOK_LIMITS.maxDuration}s`);
+  }
+
+  // Tamanho
+  if (videoData.fileSize > TIKTOK_LIMITS.maxVideoSize) {
+    errors.push(`File too large. Max: 4GB`);
+  }
+
+  // Áudio
+  if (videoData.hasProtectedAudio) {
+    errors.push('Video contains copyrighted audio. Use TikTok Sound Library.');
+  }
+
+  // Marca d'água
+  if (videoData.hasWatermark) {
+    errors.push('Remove watermarks before uploading.');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+````
+
+---
+
+**IMPORTANTE:**
+- Priorizar Draft Mode para preservar alcance
+- is_aigc é OBRIGATÓRIO
+- Jitter aleatório em agendamentos
+- Auditoria necessária para modo público

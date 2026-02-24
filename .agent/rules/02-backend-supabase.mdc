@@ -1,0 +1,259 @@
+---
+description: "Regras de RLS, Prisma, Supabase Auth"
+globs:
+  - "src/**"
+  - "src/lib/db/**"
+  - "src/lib/auth/**"
+  - "prisma/**"
+  - "*.prisma"
+  - "src/infrastructure/database/**"
+  - "src/app/**/actions.ts"
+---
+
+# 🗄️ REGRAS DE BACKEND E SUPABASE
+
+## Row Level Security (RLS) - OBRIGATÓRIO
+
+### Princípio Fundamental
+**ZERO TRUST**: Toda query DEVE passar pelo filtro de RLS, mesmo que a aplicação já faça o filtro.
+
+### Implementação
+````sql
+-- Exemplo: Tabela de posts
+CREATE POLICY "Users can only see their own posts"
+ON posts
+FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can only insert their own posts"
+ON posts
+FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can only update their own posts"
+ON posts
+FOR UPDATE
+USING (auth.uid() = user_id);
+````
+
+### Teste de RLS (SEMPRE executar)
+````typescript
+// ✅ TESTE: Tentar acessar dados de outro usuário DEVE falhar
+const { data, error } = await supabase
+  .from('posts')
+  .select('*')
+  .eq('user_id', 'outro-user-id'); // Deve retornar []
+````
+
+## Prisma Schema (Padrões)
+````prisma
+// ✅ CORRETO: Usar snake_case e relations explícitas
+model UserProfile {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  credits_balance Int      @default(0)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  
+  // Relations
+  transactions    CoinTransaction[]
+  
+  @@map("user_profiles")
+}
+
+model CoinTransaction {
+  id                String   @id @default(uuid())
+  user_id           String
+  amount            Int
+  type              TransactionType
+  stripe_session_id String?
+  created_at        DateTime @default(now())
+  
+  // Relations
+  user              UserProfile @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@map("coin_transactions")
+  @@index([user_id])
+}
+
+enum TransactionType {
+  purchase
+  usage
+  refund
+}
+````
+
+## Connection Pooling (CRÍTICO)
+````typescript
+// ✅ PRODUCTION: Usar Supavisor (Transaction Mode - Porta 6543)
+// .env.production
+DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:6543/postgres?pgbouncer=true"
+
+// ✅ DEVELOPMENT/MIGRATIONS: Usar Direct Connection (Porta 5432)
+// .env.local
+DIRECT_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
+
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+````
+
+## Supabase Auth (Server Actions)
+````typescript
+// ✅ CORRETO: Usar createServerClient em Server Actions
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+
+export async function getUserProfile() {
+  const cookieStore = await cookies();
+  
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('Unauthorized');
+  }
+
+  return user;
+}
+````
+
+## Query Optimization
+````typescript
+// ❌ ERRADO: N+1 queries
+const posts = await prisma.post.findMany();
+for (const post of posts) {
+  const user = await prisma.user.findUnique({ where: { id: post.userId } });
+}
+
+// ✅ CORRETO: Use include/select
+const posts = await prisma.post.findMany({
+  include: {
+    user: {
+      select: { id: true, name: true, avatar_url: true }
+    }
+  }
+});
+````
+
+## Migrations (SEMPRE)
+````bash
+# ✅ Criar migration antes de alterar schema
+npx prisma migrate dev --name add_youtube_credentials
+
+# ✅ Aplicar em produção
+npx prisma migrate deploy
+
+# ❌ NUNCA use db push em produção
+npx prisma db push # APENAS em desenvolvimento
+````
+
+## Criptografia de Secrets
+````typescript
+// ✅ CORRETO: Criptografar API Keys dos usuários
+import crypto from 'crypto';
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY!; // 32 bytes hex
+const ALGORITHM = 'aes-256-gcm';
+
+function encryptApiKey(plaintext: string): string {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
+  
+  let encrypted = cipher.update(plaintext, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  
+  const authTag = cipher.getAuthTag();
+  
+  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+}
+
+function decryptApiKey(ciphertext: string): string {
+  const parts = ciphertext.split(':');
+  const iv = Buffer.from(parts[0], 'hex');
+  const authTag = Buffer.from(parts[1], 'hex');
+  const encrypted = parts[2];
+  
+  const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
+  decipher.setAuthTag(authTag);
+  
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  
+  return decrypted;
+}
+````
+
+## Rate Limiting (Server Actions)
+````typescript
+// ✅ Usar Upstash Redis para rate limiting
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+const ratelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, '10 s'), // 10 requests per 10s
+  analytics: true,
+});
+
+export async function generateContent(userId: string) {
+  const { success } = await ratelimit.limit(userId);
+  
+  if (!success) {
+    throw new Error('Rate limit exceeded. Please try again later.');
+  }
+  
+  // Continue with generation...
+}
+````
+
+## Service Role (CUIDADO)
+````typescript
+// ❌ NUNCA exponha service_role_key no cliente
+// ❌ NUNCA use em Client Components
+
+// ✅ APENAS em Server Actions, API Routes, Webhooks
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!, // ⚠️ SERVER-SIDE ONLY
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
+
+// Use para operações administrativas que ignoram RLS
+export async function banUser(userId: string) {
+  const { error } = await supabaseAdmin
+    .from('user_profiles')
+    .update({ is_banned: true })
+    .eq('id', userId);
+}
+````
+
+---
+
+**LEMBRETE:** RLS é a ÚLTIMA linha de defesa. Configure SEMPRE.
