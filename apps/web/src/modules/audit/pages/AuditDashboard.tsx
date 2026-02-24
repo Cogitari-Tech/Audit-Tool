@@ -5,6 +5,7 @@ import {
   FileText,
   Users,
   ArrowRight,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/Button";
 import { useAudit } from "../hooks/useAudit";
@@ -17,34 +18,35 @@ export default function AuditDashboard() {
       title: "Auditorias Ativas",
       value: stats.activePrograms.toString(),
       icon: FileText,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      color: "text-primary",
     },
     {
       title: "Riscos Altos/Críticos",
       value: stats.highRiskFindings.toString(),
       icon: AlertTriangle,
-      color: stats.highRiskFindings > 0 ? "text-red-600" : "text-slate-400",
-      bg: stats.highRiskFindings > 0 ? "bg-red-50" : "bg-slate-100",
+      color:
+        stats.highRiskFindings > 0
+          ? "text-destructive"
+          : "text-muted-foreground",
     },
     {
       title: "Conformidade",
       value: `${stats.complianceRate}%`,
       icon: ShieldCheck,
-      color: stats.complianceRate >= 80 ? "text-emerald-600" : "text-amber-600",
-      bg: stats.complianceRate >= 80 ? "bg-emerald-50" : "bg-amber-50",
+      color:
+        stats.complianceRate >= 80 ? "text-emerald-500" : "text-destructive",
     },
     {
       title: "Ações Pendentes",
       value: stats.pendingActionPlans.toString(),
       icon: Clock,
-      color: stats.pendingActionPlans > 0 ? "text-amber-600" : "text-slate-400",
-      bg: stats.pendingActionPlans > 0 ? "bg-amber-50" : "bg-slate-100",
+      color:
+        stats.pendingActionPlans > 0 ? "text-primary" : "text-muted-foreground",
     },
   ];
 
   const activePrograms = programs.filter(
-    (p) => p.status === "in_progress" || p.status === "draft"
+    (p) => p.status === "in_progress" || p.status === "draft",
   );
 
   const recentFindings = findings
@@ -54,15 +56,15 @@ export default function AuditDashboard() {
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case "critical":
-        return "text-red-700 bg-red-50";
+        return "text-destructive border-destructive bg-destructive/10";
       case "high":
-        return "text-orange-700 bg-orange-50";
+        return "text-orange-500 border-orange-500 bg-orange-500/10";
       case "medium":
-        return "text-amber-700 bg-amber-50";
+        return "text-amber-500 border-amber-500 bg-amber-500/10";
       case "low":
-        return "text-green-700 bg-green-50";
+        return "text-emerald-500 border-emerald-500 bg-emerald-500/10";
       default:
-        return "text-slate-600 bg-slate-50";
+        return "text-muted-foreground border-border bg-background";
     }
   };
 
@@ -79,42 +81,50 @@ export default function AuditDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "in_progress":
-        return "text-blue-600 bg-blue-50 border-blue-200";
+        return "text-primary border-primary/20 bg-primary/5";
       case "draft":
-        return "text-slate-600 bg-slate-50 border-slate-200";
+        return "text-muted-foreground/60 border-white/5 bg-foreground/5";
       case "completed":
-        return "text-emerald-600 bg-emerald-50 border-emerald-200";
+        return "text-emerald-500 border-emerald-500/20 bg-emerald-500/5";
       default:
-        return "text-slate-600 bg-slate-50 border-slate-200";
+        return "text-muted-foreground/40 border-white/5 bg-foreground/5";
     }
   };
 
   if (loading && programs.length === 0) {
     return (
-      <div className="p-8 flex items-center justify-center h-64 text-slate-400">
+      <div className="p-8 flex items-center justify-center h-64 text-muted-foreground font-medium uppercase tracking-widest text-xs">
         Carregando painel de auditoria...
       </div>
     );
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-12">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">
-            Painel de Auditoria
-          </h1>
-          <p className="text-slate-600 mt-1">
-            Gestão de riscos e acompanhamento de auditorias
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-8 h-1 bg-primary rounded-full" />
+            <h1 className="text-4xl font-bold tracking-tight font-display">
+              Auditoria
+            </h1>
+          </div>
+          <p className="text-muted-foreground font-medium">
+            Gestão de riscos e acompanhamento de conformidade corporativa.
           </p>
         </div>
-        <a href="/audit/programs">
-          <Button className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            <span>Nova Auditoria</span>
-          </Button>
-        </a>
+
+        <div className="flex items-center gap-3">
+          <a href="/audit/programs">
+            <Button
+              variant="primary"
+              className="rounded-2xl px-6 shadow-lg shadow-primary/20"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Nova Auditoria
+            </Button>
+          </a>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -122,151 +132,181 @@ export default function AuditDashboard() {
         {statCards.map((stat, index) => (
           <div
             key={index}
-            className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between"
+            className="glass-card soft-shadow p-8 flex flex-col justify-between relative overflow-hidden group bg-white/5 dark:bg-black/20 backdrop-blur-xl rounded-[2.5rem] border border-white/10 hover:-translate-y-2 transition-all"
           >
-            <div>
-              <p className="text-sm font-medium text-slate-500">{stat.title}</p>
-              <h3 className="text-2xl font-bold text-slate-900 mt-1">
-                {stat.value}
-              </h3>
+            <div className="flex items-start justify-between mb-6">
+              <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em] relative z-10">
+                {stat.title}
+              </p>
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center bg-foreground/5 shadow-lg shadow-current/5 relative z-10 group-hover:scale-110 transition-transform`}
+              >
+                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+              </div>
             </div>
-            <div className={`p-3 rounded-full ${stat.bg}`}>
-              <stat.icon className={`w-6 h-6 ${stat.color}`} />
+            <h3 className="text-4xl font-bold tracking-tight text-foreground relative z-10 font-display">
+              {stat.value}
+            </h3>
+            {/* Background elements */}
+            <div className="absolute -bottom-8 -right-8 opacity-[0.03] group-hover:opacity-[0.07] transition-all pointer-events-none rotate-12 scale-150">
+              <stat.icon className="w-48 h-48" />
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Active Audits */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-slate-900">
-              Auditorias em Andamento
-            </h3>
+        <div className="lg:col-span-2 glass-card soft-shadow bg-white/5 dark:bg-black/20 backdrop-blur-xl rounded-[3rem] border border-white/5 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between p-10 border-b border-white/5">
+            <div className="space-y-1">
+              <h3 className="text-xl font-bold text-foreground font-display tracking-tight">
+                Auditorias em Andamento
+              </h3>
+              <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em]">
+                Programas ativos e rascunhos
+              </p>
+            </div>
             <a
               href="/audit/programs"
-              className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1"
+              className="px-6 py-2 rounded-xl bg-foreground/5 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest hover:text-primary hover:bg-white transition-all flex items-center gap-2 group"
             >
-              Ver todas <ArrowRight className="w-3.5 h-3.5" />
+              Ver Todas
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </a>
           </div>
 
-          {activePrograms.length > 0 ? (
-            <div className="space-y-6">
-              {activePrograms.slice(0, 5).map((program) => {
-                const programFindings = findings.filter(
-                  (f) => f.program_id === program.id
-                );
-                const resolved = programFindings.filter(
-                  (f) => f.status === "resolved" || f.status === "accepted"
-                ).length;
-                const total = programFindings.length;
-                const progress = total > 0 ? Math.round((resolved / total) * 100) : 0;
+          <div className="flex-1 p-10">
+            {activePrograms.length > 0 ? (
+              <div className="space-y-10">
+                {activePrograms.slice(0, 5).map((program) => {
+                  const programFindings = findings.filter(
+                    (f) => f.program_id === program.id,
+                  );
+                  const resolved = programFindings.filter(
+                    (f) => f.status === "resolved" || f.status === "accepted",
+                  ).length;
+                  const total = programFindings.length;
+                  const progress =
+                    total > 0 ? Math.round((resolved / total) * 100) : 0;
 
-                return (
-                  <div
-                    key={program.id}
-                    className="border-b border-slate-100 last:border-0 pb-6 last:pb-0"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="text-base font-medium text-slate-900">
-                          {program.name}
-                        </h4>
-                        <p className="text-sm text-slate-500 flex items-center mt-1">
-                          {program.framework && (
-                            <>
-                              <FileText className="w-3 h-3 mr-1" />
-                              {program.framework.name}
-                              <span className="mx-2">|</span>
-                            </>
-                          )}
-                          <Users className="w-3 h-3 mr-1" />
-                          {programFindings.length} achados
+                  return (
+                    <div key={program.id} className="group">
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="space-y-2">
+                          <h4 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
+                            {program.name}
+                          </h4>
+                          <div className="flex items-center gap-3">
+                            {program.framework && (
+                              <div className="flex items-center px-2 py-1 bg-foreground/5 rounded-md text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                                <FileText className="w-3 h-3 mr-1" />
+                                {program.framework.name}
+                              </div>
+                            )}
+                            <div className="flex items-center text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                              <Users className="w-3 h-3 mr-1" />
+                              {programFindings.length} achados
+                            </div>
+                          </div>
+                        </div>
+                        <span
+                          className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full border shadow-sm ${getStatusColor(
+                            program.status,
+                          )}`}
+                        >
+                          {getStatusLabel(program.status)}
+                        </span>
+                      </div>
+
+                      {/* Refined Progress Bar */}
+                      <div className="space-y-2">
+                        <div className="w-full bg-foreground/5 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="bg-primary h-full transition-all duration-1000 ease-out shadow-lg shadow-primary/20"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] font-bold text-muted-foreground/40 text-right uppercase tracking-[0.2em]">
+                          {progress}% resolvido
                         </p>
                       </div>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
-                          program.status
-                        )}`}
-                      >
-                        {getStatusLabel(program.status)}
-                      </span>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2 mt-3">
-                      <div
-                        className="bg-slate-900 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-slate-400 text-right mt-1">
-                      {progress}% resolvido
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-48 text-slate-500">
-              <FileText className="w-12 h-12 mb-4 text-slate-300" />
-              <p>Nenhuma auditoria em andamento.</p>
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-12 text-muted-foreground/40">
+                <FileText className="w-16 h-16 mb-6 opacity-10" />
+                <p className="text-xs font-bold uppercase tracking-[0.2em]">
+                  Nenhuma auditoria em andamento.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Recent Findings */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
-              Achados Recentes
-            </h3>
+        <div className="glass-card soft-shadow bg-white/5 dark:bg-black/20 backdrop-blur-xl rounded-[3rem] border border-white/5 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between p-10 border-b border-white/5">
+            <div className="space-y-1">
+              <h3 className="text-xl font-bold text-foreground font-display tracking-tight flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-primary" />
+                Achados Recentes
+              </h3>
+              <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em]">
+                Últimas não conformidades
+              </p>
+            </div>
             <a
               href="/audit/findings"
-              className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1"
+              className="p-3 rounded-full bg-foreground/5 text-muted-foreground/60 hover:text-primary transition-all"
             >
-              Ver todos <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-4 h-4" />
             </a>
           </div>
 
-          {recentFindings.length > 0 ? (
-            <div className="space-y-4">
-              {recentFindings.map((finding) => (
-                <div
-                  key={finding.id}
-                  className="p-4 rounded-lg bg-slate-50 border border-slate-100"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-slate-700 truncate max-w-[200px]">
-                      {finding.title}
-                    </span>
-                    <span
-                      className={`text-xs font-bold px-2 py-0.5 rounded ${getRiskColor(
-                        finding.risk_level
-                      )}`}
-                    >
-                      {finding.risk_level === "critical"
-                        ? "Crítico"
-                        : finding.risk_level === "high"
-                          ? "Alto"
-                          : finding.risk_level === "medium"
-                            ? "Médio"
-                            : "Baixo"}
-                    </span>
+          <div className="flex-1 p-8">
+            {recentFindings.length > 0 ? (
+              <div className="space-y-4">
+                {recentFindings.map((finding) => (
+                  <div
+                    key={finding.id}
+                    className="p-6 bg-white/5 dark:bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all group cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start mb-4 gap-4">
+                      <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight leading-tight">
+                        {finding.title}
+                      </span>
+                      <span
+                        className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border shadow-sm ${getRiskColor(
+                          finding.risk_level,
+                        )}`}
+                      >
+                        {finding.risk_level === "critical"
+                          ? "Crítico"
+                          : finding.risk_level === "high"
+                            ? "Alto"
+                            : finding.risk_level === "medium"
+                              ? "Médio"
+                              : "Baixo"}
+                      </span>
+                    </div>
+                    <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.1em] truncate">
+                      {finding.program?.name ?? "—"}
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    {finding.program?.name ?? "—"}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-48 text-slate-500">
-              <ShieldCheck className="w-12 h-12 mb-4 text-slate-300" />
-              <p>Nenhum achado pendente.</p>
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-12 text-muted-foreground/40">
+                <ShieldCheck className="w-16 h-16 mb-6 opacity-10" />
+                <p className="text-xs font-bold uppercase tracking-[0.2em]">
+                  Nenhum achado pendente.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

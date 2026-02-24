@@ -180,13 +180,27 @@ export type TaskCategory =
   | "Compliance"
   | "Infrastructure"
   | "Dependency"
-  | "Architecture";
+  | "Architecture"
+  | "Product UI/UX"
+  | "Growth/Marketing"
+  | "Sales/CRM"
+  | "Customer Success"
+  | "HR/Recruitment"
+  | "Finance/Billing"
+  | "Legal/Privacy"
+  | "Data Science/AI";
 
 export type ImpactArea =
   | "Segurança"
   | "Operacional"
   | "Jurídico"
-  | "Privacidade";
+  | "Privacidade"
+  | "Financeiro"
+  | "Reputacional"
+  | "Estratégico"
+  | "Experiência do Usuário"
+  | "Conformidade Regulatória"
+  | "Recursos Humanos";
 
 /** 5W2H methodology applied to audit findings */
 export interface Finding5W2H {
