@@ -38,14 +38,13 @@ function createEmptyFinding(findingId: string = ""): ReportFinding {
 }
 
 function createEmptyReport(): AuditReport {
-  const today = new Date().toISOString().split("T")[0];
   return {
     program_id: "",
-    doc_id: `CGT-${new Date().getFullYear()}-AUD-001`,
+    doc_id: "",
     client_name: "",
     project_name: "",
     environment: "",
-    start_date: today,
+    start_date: "",
     end_date: "",
     lead_auditor: "",
     executive_summary: "",
