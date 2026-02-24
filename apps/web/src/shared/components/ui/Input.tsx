@@ -1,25 +1,18 @@
-import React from 'react';
+import React from "react";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, ...props }, ref) => {
+  ({ className, ...props }, ref) => {
     return (
-      <div className="space-y-1">
-        {label && (
-          <label className="block text-sm font-medium text-slate-700">
-            {label}
-          </label>
-        )}
-        <input
-          ref={ref}
-          className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 ${className}`}
-          {...props}
-        />
-      </div>
+      <input
+        ref={ref}
+        className={`w-full px-5 py-3.5 text-sm bg-background/50 backdrop-blur-sm border border-border/40 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all rounded-xl font-medium placeholder:opacity-50 ${className}`}
+        {...props}
+      />
     );
-  }
+  },
 );
-Input.displayName = 'Input';
+Input.displayName = "Input";

@@ -1,0 +1,72 @@
+---
+description: Regras para integração com Instagram Graph API (Reels, Stories, Feed)
+globs: src/lib/integrations/instagram/**/*
+---
+# 📸 INTEGRAÇÃO INSTAGRAM
+
+## Contexto/Princípios
+Utiliza a Instagram Graph API (via Facebook Login). Complexidade alta devido ao processamento assíncrono de mídia.
+- **Account Type**: Apenas contas "Business" ou "Creator" são suportadas via API. Contas pessoais não funcionam.
+- **Async Media**: Vídeos (Reels) exigem polling de `container_status` antes da publicação.
+- **Rate Limits**: Limites rigorosos de ~25 posts/dia para evitar bloqueios de API.
+- **Audio**: Direitos autorais são checados no upload.
+
+## Implementação
+
+### Upload de Reels (Container + Publishing)
+```typescript
+// ✅ CORRETO: Fluxo de 3 etapas com Polling
+async function publishReel(
+  igUserId: string, 
+  videoUrl: string, 
+  caption: string, 
+  accessToken: string
+): Promise<Result<string>> {
+  // 1. Criar Container
+  const containerResp = await fetch(
+    `https://graph.facebook.com/v19.0/${igUserId}/media?media_type=REELS&video_url=${encodeURIComponent(videoUrl)}&caption=${encodeURIComponent(caption)}&access_token=${accessToken}`,
+    { method: 'POST' }
+  );
+  const { id: containerId } = await containerResp.json();
+
+  // 2. Polling de Status (Wait for FINISHED)
+  let status = 'IN_PROGRESS';
+  let attempts = 0;
+  
+  while (status !== 'FINISHED' && attempts < 20) {
+    await sleep(5000); // Wait 5s
+    const statusResp = await fetch(
+      `https://graph.facebook.com/v19.0/${containerId}?fields=status_code&access_token=${accessToken}`
+    );
+    const statusData = await statusResp.json();
+    status = statusData.status_code;
+    
+    if (status === 'ERROR') return Result.fail('Erro no processamento do vídeo pelo Instagram');
+    attempts++;
+  }
+
+  if (status !== 'FINISHED') return Result.fail('Timeout no processamento do vídeo');
+
+  // 3. Publicar Container
+  const publishResp = await fetch(
+    `https://graph.facebook.com/v19.0/${igUserId}/media_publish?creation_id=${containerId}&access_token=${accessToken}`,
+    { method: 'POST' }
+  );
+  
+  const publishData = await publishResp.json();
+  return Result.ok(publishData.id);
+}
+```
+
+### ❌ ERRADO: Anti-padrões
+```typescript
+// ❌ Tentar publicar imagem em endpoint de vídeo
+// ❌ Não checar o status do container antes de publicar (resulta em erro genérico)
+// ❌ Usar URLs de vídeo que expiram rápido (ex: S3 presigned url com 5min)
+```
+
+## Edge Cases / Alertas
+- ⚠️ **Aspect Ratio**: Reels devem ser 9:16. Feed pode ser 1:1 ou 4:5. A API rejeita proporções incorretas.
+- ⚠️ **Stories**: A API suporta publicação de stories, mas stickers/links interativos são limitados.
+- 🚨 **Token de Página**: É necessário o Page Access Token conectado à conta Instagram, não o User Token.
+- 🚨 **Copyright**: Se o vídeo contiver áudio comercial não licenciado, o post pode ser publicado mas silenciado ou removido.

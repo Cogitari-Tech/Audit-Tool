@@ -1,0 +1,91 @@
+---
+description: Regras para integração com LinkedIn API, Warm-up, OAuth (Auth, Posts, Rate Limits)
+globs: src/lib/integrations/linkedin/**/*
+---
+# 👔 INTEGRAÇÃO LINKEDIN
+
+## Contexto/Princípios
+A API do LinkedIn (v2/UGC) é rigorosa quanto a tokens e spam. O projeto Amuri usa o modelo BYOK (Bring Your Own Key).
+- **Token Expiration**: Access Tokens expiram em 60 dias e exigem re-autenticação manual do usuário (Refresh tokens programáticos são limitados a parceiros).
+- **Warm-up**: Contas novas não devem postar massivamente para evitar bloqueios.
+- **Protocolo**: Sempre use `urn:li:person:{id}` ou `urn:li:organization:{id}` para identificação.
+
+## Implementação
+
+### Autenticação e Refresh
+```typescript
+// ✅ CORRETO: Verificação proativa de expiração do token
+export async function checkLinkedInTokenStatus(userId: string): Promise<Result<void>> {
+  const credentials = await getEncryptedCredentials(userId, 'linkedin');
+  const now = new Date();
+  const expiryDate = new Date(credentials.expiresAt);
+  
+  // Alerta 7 dias antes de expirar
+  const daysUntilExpiry = differenceInDays(expiryDate, now);
+  
+  if (daysUntilExpiry <= 0) {
+    return Result.fail('Token LinkedIn expirado. Por favor, reconecte sua conta.');
+  }
+  
+  if (daysUntilExpiry <= 7) {
+    await notifyUser(userId, 'linkedin_token_expiring');
+  }
+  
+  return Result.ok();
+}
+```
+
+### Postagem UGC (User Generated Content)
+```typescript
+// ✅ CORRETO: Estrutura UGC Post padrão com tratamento de erros
+async function postToLinkedIn(
+  authorUrn: string, 
+  text: string, 
+  accessToken: string
+): Promise<Result<string>> {
+  try {
+    const response = await fetch('https://api.linkedin.com/v2/ugcPosts', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'X-Restli-Protocol-Version': '2.0.0', // ⚠️ CRÍTICO
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        author: authorUrn,
+        lifecycleState: 'PUBLISHED',
+        specificContent: {
+          'com.linkedin.ugc.ShareContent': {
+            shareCommentary: { text },
+            shareMediaCategory: 'NONE',
+          },
+        },
+        visibility: {
+          'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
+        },
+      }),
+    });
+
+    if (response.status === 429) {
+      return Result.fail('LinkedIn Rate Limit atingido. Tente novamente mais tarde.');
+    }
+    
+    // ... handling
+  } catch (error) {
+    return Result.fail(error.message);
+  }
+}
+```
+
+### ❌ ERRADO: Anti-padrões comuns
+```typescript
+// ❌ Não tente usar refresh tokens sem ser parceiro de marketing
+// ❌ Não esqueça o header X-Restli-Protocol-Version
+// ❌ Não faça hardcode do URN prefix (person vs organization)
+const urn = `urn:li:person:${id}`; // Errado se for Company Page
+```
+
+## Edge Cases / Alertas
+- ⚠️ **Imagens/Vídeo**: Exigem um fluxo de 3 passos (Register -> Upload -> Create Post). Não tente enviar binários direto no UGC Post.
+- ⚠️ **Rate Limits**: Variam baseados no SSI (Social Selling Index) e idade da conta. Implemente backoff agressivo.
+- 🚨 **Duplicate Content**: O LinkedIn rejeita posts idênticos em curto período. Adicione jitter ou variação no texto.

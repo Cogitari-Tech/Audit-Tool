@@ -1,0 +1,99 @@
+---
+description: "Design System oficial, UI patterns, Cores, Tipografia"
+globs:
+  - "src/components/ui/**"
+  - "src/app/**/page.tsx"
+  - "src/app/globals.css"
+  - "tailwind.config.ts"
+---
+
+# 🎨 DESIGN SYSTEM & UI UX - AMURI SAAS
+
+> **FONTE DA VERDADE:** A Landing Page (`amuri-landingpage-example.html`) é a referência visual absoluta. Todos os componentes devem seguir sua estética.
+
+## 1. Fundamentos Visuais
+
+### Paleta de Cores (Brand)
+- **Primary:** `orange-600` (#ea580c) - Ações principais, CTAs, Highlights.
+- **Hover:** `orange-700` (#c2410c).
+- **Ring/Focus:** `orange-600` (com opacidade).
+- **Background Light:** `slate-50` (#f8fafc).
+- **Background Dark:** `slate-950` (#020617).
+
+### Tipografia
+- **Headings (Títulos):** `Plus Jakarta Sans` (Pesos: 700, 800).
+- **Body (Texto):** `Inter` (Pesos: 400, 500).
+- **Botões/Nav:** `Plus Jakarta Sans` (Peso: 600/700).
+
+### Formas e Sombras
+- **Radius Padrão (Cards/Seções):** `rounded-2xl` ou `rounded-3xl`.
+- **Radius Botões/Inputs:** `rounded-full` (Botões) / `rounded-xl` (Inputs).
+- **Sombras:** `shadow-xl` ou `shadow-2xl` para elementos flutuantes/destacados. `shadow-orange-600/30` para botões primários.
+
+---
+
+## 2. Padrões para Páginas de Autenticação (Login/Register)
+
+Deve replicar a sensação "premium e limpa" da landing page.
+
+### Background
+- **Light:** `bg-slate-50` com gradiente sutil no canto superior direito (`from-orange-50` opacity-60).
+- **Dark:** `bg-slate-950` com gradiente sutil (`from-slate-800` opacity-40).
+
+### Card Container (Login Box)
+- **Shape:** `rounded-2xl` ou `rounded-3xl`.
+- **Surface:** `bg-white` (Light) / `bg-slate-900` (Dark).
+- **Border:** `border border-slate-200` (Light) / `border-slate-800` (Dark).
+- **Shadow:** `shadow-2xl`.
+- **Padding:** `p-8` ou `p-10`.
+
+### Inputs (Campos de Texto)
+- **Shape:** `rounded-xl` (Visual moderno, amigável).
+- **Height:** `h-11` ou `h-12` (Área de toque confortável).
+- **Border:** `border-slate-200` (Light) / `border-slate-800` (Dark).
+- **Focus:** `ring-2 ring-orange-600 ring-offset-2`.
+- **Bg:** `bg-transparent` ou `bg-slate-50` (Light) / `bg-slate-950` (Dark).
+
+### Botões (Ações)
+- **Primary (Entrar/Registrar):**
+    - `w-full`
+    - `h-12`
+    - `rounded-full`
+    - `bg-orange-600 hover:bg-orange-700`
+    - `text-white font-bold font-sans (Plus Jakarta)`
+    - `shadow-lg shadow-orange-600/20`
+- **Social Login (Google/GitHub):**
+    - `w-full`
+    - `h-12`
+    - `rounded-full`
+    - `border border-slate-200` (Light) / `border-slate-700` (Dark)
+    - `bg-white` (Light) / `bg-slate-900` (Dark)
+    - `text-slate-700` (Light) / `text-white` (Dark)
+    - `hover:bg-slate-50` / `hover:bg-slate-800`
+
+### Links e Textos
+- **Links (Esqueceu a senha/Criar conta):**
+    - `text-sm font-semibold`
+    - `text-slate-600 hover:text-orange-600` (Transition colors).
+- **Mensagens Auxiliares (Labels/Hints):**
+    - `text-sm text-slate-500` (Light) / `text-slate-400` (Dark).
+    - Font `Inter`.
+
+### Feedback Visual
+- **Sucesso:** Ícone `CheckCircle2Icon` verde.
+- **Erro:** Mensagens em `text-red-500` tamanho `text-xs` ou `text-sm`.
+
+---
+
+## 3. Componentes shadcn/ui (Customização)
+
+Ao instalar componentes do shadcn, ajuste o `globals.css` e `tailwind.config.ts` para refletir:
+- `--radius`: `0.75rem` (12px) ou `1rem` (16px).
+- `--primary`: Orange-600.
+
+**Exemplo de Botão shadcn customizado:**
+```tsx
+<Button className="rounded-full bg-orange-600 font-bold font-sans shadow-orange-600/20">
+  Entrar
+</Button>
+```

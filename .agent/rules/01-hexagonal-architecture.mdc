@@ -1,0 +1,71 @@
+---
+alwaysApply: true
+description: "Arquitetura Hexagonal (Ports & Adapters) para integrações externas"
+globs:
+  - "src/application/ports/**"
+  - "src/infrastructure/adapters/**"
+  - "src/application/use-cases/**"
+---
+
+# 🔷 ARQUITETURA HEXAGONAL - PORTS & ADAPTERS
+
+## Quando Aplicar
+
+✅ **SIM** para:
+- Integrações com APIs externas (YouTube, TikTok, Stripe)
+- Acesso a banco de dados
+- Providers de IA (Veo, Runway, OpenAI)
+- Serviços de email/SMS
+
+❌ **NÃO** para:
+- Utilitários (format-date.ts, capitalize.ts)
+- Componentes UI simples
+- Helpers internos
+
+---
+
+## Padrão Obrigatório
+
+### 1. Definir Port (Interface)
+```typescript
+// src/application/ports/secondary/IYouTubeGateway.ts
+export interface IYouTubeGateway {
+  publishVideo(video: Video): Promise<Result<PublishResult>>;
+}
+```
+
+### 2. Implementar Adapter
+```typescript
+// src/infrastructure/adapters/secondary/gateways/YouTubeApiGateway.ts
+export class YouTubeApiGateway implements IYouTubeGateway {
+  async publishVideo(video: Video): Promise<Result<PublishResult>> {
+    // Implementação real
+  }
+}
+```
+
+### 3. Usar no Use Case
+```typescript
+// src/application/use-cases/PublishVideoUseCase.ts
+export class PublishVideoUseCase {
+  constructor(private gateway: IYouTubeGateway) {} // ✅ Depende da INTERFACE
+  
+  async execute() {
+    await this.gateway.publishVideo(video); // ✅ Não sabe se é real ou mock
+  }
+}
+```
+
+---
+
+## Checklist de Code Review
+
+- [ ] Use Case depende de Port, não de Adapter?
+- [ ] Port está em `src/application/ports/`?
+- [ ] Adapter está em `src/infrastructure/adapters/`?
+- [ ] Existe Mock Adapter para testes?
+- [ ] Injeção de dependências configurada?
+
+---
+
+**Consulte:** `docs/adr/006-arquitetura-hexagonal.md`
