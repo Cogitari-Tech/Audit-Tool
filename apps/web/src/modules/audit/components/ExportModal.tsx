@@ -111,7 +111,7 @@ export default function ExportModal({
             disabled={hasErrors || exporting}
             onClick={() => handleExport(opt.format)}
             className={`w-full flex items-center justify-between p-4 border rounded-xl transition-colors group
-              ${opt.recommended ? "border-brand-200 dark:border-brand-900/50 bg-brand-50/50 dark:bg-brand-900/10 hover:bg-brand-100/60 dark:hover:bg-brand-900/20" : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800"}
+              ${opt.recommended ? "border-primary/20 bg-primary/5 hover:bg-primary/10" : "border-border bg-card hover:bg-muted/50"}
               disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             <div className="flex items-center gap-3">
@@ -129,7 +129,7 @@ export default function ExportModal({
                 </p>
               </div>
             </div>
-            <span className="text-slate-400 group-hover:text-brand-600 transition-colors">
+            <span className="text-muted-foreground group-hover:text-primary transition-colors">
               <Download className="w-4 h-4" />
             </span>
           </button>

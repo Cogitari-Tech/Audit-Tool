@@ -29,10 +29,10 @@ export default function ReportSignatures({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-5">
+    <div className="glass-card soft-shadow bg-muted/20 dark:bg-card/40 backdrop-blur-xl rounded-[2.5rem] border border-border p-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-brand-600 dark:text-brand-500" />
+          <ShieldCheck className="w-5 h-5 text-primary" />
           <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm uppercase tracking-wide">
             Assinaturas e Rastreabilidade
           </h3>

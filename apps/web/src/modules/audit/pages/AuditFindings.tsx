@@ -1,14 +1,8 @@
 import { useState } from "react";
-import {
-  AlertTriangle,
-  Plus,
-  Search,
-  Filter,
-} from "lucide-react";
+import { AlertTriangle, Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/shared/components/ui/Button";
 import { Input } from "@/shared/components/ui/Input";
 import { Select } from "@/shared/components/ui/Select";
-import { Modal } from "@/shared/components/ui/Modal";
 import { useAudit } from "../hooks/useAudit";
 import type {
   FindingRiskLevel,
@@ -16,12 +10,27 @@ import type {
   CreateFindingInput,
 } from "../types/audit.types";
 
-const RISK_CONFIG: Record<FindingRiskLevel, { label: string; color: string }> = {
-  critical: { label: "Crítico", color: "text-red-700 bg-red-50 border-red-200" },
-  high: { label: "Alto", color: "text-orange-700 bg-orange-50 border-orange-200" },
-  medium: { label: "Médio", color: "text-amber-700 bg-amber-50 border-amber-200" },
-  low: { label: "Baixo", color: "text-green-700 bg-green-50 border-green-200" },
-};
+const RISK_CONFIG: Record<FindingRiskLevel, { label: string; color: string }> =
+  {
+    critical: {
+      label: "Crítico",
+      color:
+        "text-destructive border-destructive/20 bg-destructive/5 shadow-sm",
+    },
+    high: {
+      label: "Alto",
+      color: "text-orange-500 border-orange-500/20 bg-orange-500/5 shadow-sm",
+    },
+    medium: {
+      label: "Médio",
+      color: "text-amber-500 border-amber-500/20 bg-amber-500/5 shadow-sm",
+    },
+    low: {
+      label: "Baixo",
+      color:
+        "text-emerald-500 border-emerald-500/20 bg-emerald-500/5 shadow-sm",
+    },
+  };
 
 const STATUS_LABELS: Record<FindingStatus, string> = {
   open: "Aberto",
@@ -60,61 +69,74 @@ export default function AuditFindings() {
     try {
       await createFinding(form);
       setShowModal(false);
-      setForm({ program_id: "", title: "", description: "", risk_level: "medium" });
+      setForm({
+        program_id: "",
+        title: "",
+        description: "",
+        risk_level: "medium",
+      });
     } catch {
       // error shown via hook
     }
   };
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">
-            Achados de Auditoria
-          </h1>
-          <p className="text-slate-600 mt-1">
-            Não conformidades e pontos de atenção identificados
+    <div className="space-y-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-8 h-1 bg-primary rounded-full" />
+            <h1 className="text-4xl font-bold tracking-tight font-display">
+              Achados de Auditoria
+            </h1>
+          </div>
+          <p className="text-muted-foreground font-medium">
+            Gestão de não conformidades e pontos críticos identificados.
           </p>
         </div>
+
         <Button
-          className="flex items-center gap-2"
           onClick={() => setShowModal(true)}
+          variant="primary"
+          className="rounded-2xl px-6 shadow-lg shadow-primary/20"
         >
-          <Plus className="w-4 h-4" />
-          <span>Novo Achado</span>
+          <Plus className="w-4 h-4 mr-2" /> Novo Achado
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      <div className="flex flex-col md:flex-row items-center gap-6 glass-card bg-white/5 dark:bg-black/20 backdrop-blur-xl p-6 rounded-[2rem] border border-white/5 soft-shadow">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/30" />
           <Input
-            placeholder="Buscar achados..."
+            placeholder="Buscar por título ou descrição..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+            className="pl-14 bg-foreground/5 border-transparent rounded-[1.5rem] py-4 focus:bg-white/10 transition-all font-medium"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <Select
-            value={filterRisk}
-            onChange={(e) => setFilterRisk(e.target.value)}
-          >
-            <option value="">Todos os riscos</option>
-            {Object.entries(RISK_CONFIG).map(([val, cfg]) => (
-              <option key={val} value={val}>
-                {cfg.label}
-              </option>
-            ))}
-          </Select>
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground/20" />
+            <Select
+              value={filterRisk}
+              onChange={(e) => setFilterRisk(e.target.value)}
+              className="bg-foreground/5 border-transparent rounded-[1.5rem] px-6 py-4 min-w-[180px]"
+            >
+              <option value="">Risco (Todos)</option>
+              {Object.entries(RISK_CONFIG).map(([val, cfg]) => (
+                <option key={val} value={val}>
+                  {cfg.label}
+                </option>
+              ))}
+            </Select>
+          </div>
           <Select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
+            className="bg-foreground/5 border-transparent rounded-[1.5rem] px-6 py-4 min-w-[180px]"
           >
-            <option value="">Todos os status</option>
+            <option value="">Status (Todos)</option>
             {Object.entries(STATUS_LABELS).map(([val, label]) => (
               <option key={val} value={val}>
                 {label}
@@ -126,174 +148,278 @@ export default function AuditFindings() {
 
       {/* Findings List */}
       {loading && findings.length === 0 ? (
-        <div className="flex items-center justify-center h-64 text-slate-400">
-          Carregando achados...
+        <div className="flex items-center justify-center h-64 text-muted-foreground font-medium uppercase tracking-widest text-[10px]">
+          Sincronizando registros...
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 bg-white rounded-xl border border-slate-200 shadow-sm">
-          <AlertTriangle className="w-16 h-16 text-slate-300 mb-4" />
-          <p className="text-slate-600 text-lg font-medium">
-            Nenhum achado encontrado
-          </p>
-          <p className="text-slate-400 mt-1">
+        <div className="flex flex-col items-center justify-center p-24 glass-card bg-white/5 dark:bg-black/20 backdrop-blur-xl rounded-[3rem] border border-white/5 soft-shadow text-center">
+          <div className="w-24 h-24 rounded-[2.5rem] bg-foreground/5 flex items-center justify-center mx-auto mb-8 shadow-xl border border-white/5">
+            <AlertTriangle className="w-10 h-10 text-muted-foreground/20" />
+          </div>
+          <h3 className="text-2xl font-bold text-foreground font-display tracking-tight mb-3">
+            Nenhum achado
+          </h3>
+          <p className="text-muted-foreground/60 font-medium max-w-sm mx-auto mb-10">
             {search || filterRisk || filterStatus
-              ? "Tente ajustar os filtros"
-              : 'Registre o primeiro achado clicando em "Novo Achado"'}
+              ? "Nenhum resultado corresponde aos filtros aplicados."
+              : "Registre a primeira não conformidade para iniciar o monitoramento."}
           </p>
+          {(search || filterRisk || filterStatus) && (
+            <Button
+              variant="ghost"
+              className="rounded-2xl"
+              onClick={() => {
+                setSearch("");
+                setFilterRisk("");
+                setFilterStatus("");
+              }}
+            >
+              Limpar Filtros
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-100 text-left text-sm text-slate-500">
-                <th className="px-6 py-4 font-medium">Achado</th>
-                <th className="px-6 py-4 font-medium">Programa</th>
-                <th className="px-6 py-4 font-medium">Risco</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium">Data</th>
-                <th className="px-6 py-4 font-medium">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((finding) => (
-                <tr
-                  key={finding.id}
-                  className="border-b border-slate-50 hover:bg-slate-25"
-                >
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-slate-900">
-                      {finding.title}
-                    </p>
-                    {finding.description && (
-                      <p className="text-sm text-slate-500 mt-0.5 truncate max-w-xs">
-                        {finding.description}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {finding.program?.name ?? "—"}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
-                        RISK_CONFIG[finding.risk_level].color
-                      }`}
-                    >
-                      {RISK_CONFIG[finding.risk_level].label}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {STATUS_LABELS[finding.status]}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">
-                    {new Date(finding.created_at).toLocaleDateString("pt-BR")}
-                  </td>
-                  <td className="px-6 py-4">
-                    {finding.status === "open" && (
-                      <Button
-                        variant="ghost"
-                        onClick={() =>
-                          updateFinding(finding.id, { status: "in_progress" })
-                        }
-                      >
-                        <span className="text-xs">Iniciar Tratamento</span>
-                      </Button>
-                    )}
-                    {finding.status === "in_progress" && (
-                      <Button
-                        variant="ghost"
-                        onClick={() =>
-                          updateFinding(finding.id, {
-                            status: "resolved",
-                            resolved_at: new Date().toISOString(),
-                          })
-                        }
-                      >
-                        <span className="text-xs">Resolver</span>
-                      </Button>
-                    )}
-                  </td>
+        <div className="glass-card bg-white/5 dark:bg-black/20 backdrop-blur-xl rounded-[3rem] border border-white/5 soft-shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/5 text-left">
+                  <th className="px-10 py-8 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                    Achado
+                  </th>
+                  <th className="px-10 py-8 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                    Programa
+                  </th>
+                  <th className="px-10 py-8 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                    Nível de Risco
+                  </th>
+                  <th className="px-10 py-8 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                    Status Atual
+                  </th>
+                  <th className="px-10 py-8 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest text-right">
+                    Ações
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filtered.map((finding) => (
+                  <tr
+                    key={finding.id}
+                    className="group hover:bg-white/5 transition-all"
+                  >
+                    <td className="px-10 py-8">
+                      <div className="space-y-1">
+                        <p className="font-bold text-foreground font-display tracking-tight text-lg">
+                          {finding.title}
+                        </p>
+                        {finding.description && (
+                          <p className="text-sm text-muted-foreground/60 font-medium truncate max-w-sm">
+                            {finding.description}
+                          </p>
+                        )}
+                        <p className="text-[10px] font-bold text-muted-foreground/20 uppercase tracking-widest pt-2">
+                          Identificado em{" "}
+                          {new Date(finding.created_at).toLocaleDateString(
+                            "pt-BR",
+                          )}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-10 py-8">
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-foreground/5 rounded-xl text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest w-fit border border-white/5">
+                        {finding.program?.name ?? "Geral"}
+                      </div>
+                    </td>
+                    <td className="px-10 py-8">
+                      <span
+                        className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border shadow-sm ${
+                          RISK_CONFIG[finding.risk_level].color
+                        }`}
+                      >
+                        {RISK_CONFIG[finding.risk_level].label}
+                      </span>
+                    </td>
+                    <td className="px-10 py-8">
+                      <span
+                        className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
+                          finding.status === "resolved"
+                            ? "text-emerald-500"
+                            : finding.status === "in_progress"
+                              ? "text-primary"
+                              : "text-muted-foreground/60"
+                        }`}
+                      >
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            finding.status === "resolved"
+                              ? "bg-emerald-500 shadow-lg shadow-emerald-500/20"
+                              : finding.status === "in_progress"
+                                ? "bg-primary shadow-lg shadow-primary/20"
+                                : "bg-muted-foreground/20"
+                          }`}
+                        />
+                        {STATUS_LABELS[finding.status]}
+                      </span>
+                    </td>
+                    <td className="px-10 py-8 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {finding.status === "open" && (
+                          <Button
+                            variant="ghost"
+                            onClick={() =>
+                              updateFinding(finding.id, {
+                                status: "in_progress",
+                              })
+                            }
+                            className="bg-primary/5 text-primary hover:bg-primary hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-widest px-4 py-3"
+                          >
+                            Tratar
+                          </Button>
+                        )}
+                        {finding.status === "in_progress" && (
+                          <Button
+                            variant="primary"
+                            onClick={() =>
+                              updateFinding(finding.id, {
+                                status: "resolved",
+                                resolved_at: new Date().toISOString(),
+                              })
+                            }
+                            className="rounded-xl text-[10px] font-bold uppercase tracking-widest px-4 py-3 shadow-lg shadow-primary/20"
+                          >
+                            Resolver
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Create Modal */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title="Registrar Achado"
-      >
-        <div className="space-y-4">
-          <Select
-            label="Programa de Auditoria"
-            value={form.program_id}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, program_id: e.target.value }))
-            }
-          >
-            <option value="">Selecione...</option>
-            {programs.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </Select>
-          <Input
-            label="Título"
-            placeholder="Resumo do achado"
-            value={form.title}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, title: e.target.value }))
-            }
-          />
-          <Input
-            label="Descrição"
-            placeholder="Detalhes do achado"
-            value={form.description ?? ""}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, description: e.target.value }))
-            }
-          />
-          <Select
-            label="Nível de Risco"
-            value={form.risk_level}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                risk_level: e.target.value as FindingRiskLevel,
-              }))
-            }
-          >
-            {Object.entries(RISK_CONFIG).map(([val, cfg]) => (
-              <option key={val} value={val}>
-                {cfg.label}
-              </option>
-            ))}
-          </Select>
-          <Input
-            label="Prazo para Resolução"
-            type="date"
-            value={form.due_date ?? ""}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, due_date: e.target.value }))
-            }
-          />
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="ghost" onClick={() => setShowModal(false)}>
-              <span>Cancelar</span>
-            </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={!form.program_id || !form.title || loading}
-            >
-              <span>{loading ? "Registrando..." : "Registrar"}</span>
-            </Button>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-xl">
+          <div className="glass-card bg-white/5 border border-white/10 rounded-[3rem] p-12 max-w-2xl w-full shadow-2xl space-y-10 relative scale-up">
+            <div className="space-y-2">
+              <h3 className="text-3xl font-bold text-foreground font-display tracking-tight">
+                Registrar Achado
+              </h3>
+              <p className="text-sm text-muted-foreground/60 font-medium">
+                Identifique uma nova não conformidade ou ponto de atenção.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest ml-1">
+                  Programa Relacionado
+                </label>
+                <Select
+                  value={form.program_id}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, program_id: e.target.value }))
+                  }
+                  className="bg-foreground/5 border-white/5 rounded-2xl px-6 py-4"
+                >
+                  <option value="">Selecione o Ciclo...</option>
+                  {programs.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest ml-1">
+                  Título do Achado
+                </label>
+                <Input
+                  placeholder="Resumo da observação..."
+                  value={form.title}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, title: e.target.value }))
+                  }
+                  className="bg-foreground/5 border-white/5 rounded-2xl px-6 py-4 focus:bg-white/10 transition-all font-medium"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest ml-1">
+                  Descrição Detalhada
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Descreva as evidências e o impacto..."
+                  value={form.description ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
+                  className="w-full bg-foreground/5 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:bg-white/10 transition-all text-sm font-medium resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest ml-1">
+                    Nível de Risco
+                  </label>
+                  <Select
+                    value={form.risk_level}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        risk_level: e.target.value as FindingRiskLevel,
+                      }))
+                    }
+                    className="bg-foreground/5 border-white/5 rounded-2xl px-6 py-4"
+                  >
+                    {Object.entries(RISK_CONFIG).map(([val, cfg]) => (
+                      <option key={val} value={val}>
+                        {cfg.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest ml-1">
+                    Prazo de Resolução
+                  </label>
+                  <Input
+                    type="date"
+                    value={form.due_date ?? ""}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, due_date: e.target.value }))
+                    }
+                    className="bg-foreground/5 border-white/5 rounded-2xl px-6 py-4"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
+              <Button
+                variant="ghost"
+                onClick={() => setShowModal(false)}
+                className="py-4 rounded-2xl bg-foreground/5 text-muted-foreground hover:bg-white hover:text-black transition-all font-bold uppercase tracking-widest text-[10px]"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreate}
+                disabled={!form.program_id || !form.title || loading}
+                className="py-4 rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all font-bold uppercase tracking-widest text-[10px] px-10"
+              >
+                {loading ? "Processando..." : "Registrar Achado"}
+              </Button>
+            </div>
           </div>
         </div>
-      </Modal>
+      )}
     </div>
   );
 }
