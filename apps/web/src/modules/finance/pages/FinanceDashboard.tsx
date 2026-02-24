@@ -8,6 +8,7 @@ import {
   ArrowDownLeft,
   PieChart as PieChartIcon,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   BarChart,
   Bar,
@@ -23,6 +24,7 @@ import {
 import { Button } from "@/shared/components/ui/Button";
 
 export default function FinanceDashboard() {
+  const navigate = useNavigate();
   // Mock Data
   const kpis = [
     {
@@ -79,7 +81,11 @@ export default function FinanceDashboard() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="secondary" className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            className="flex items-center gap-2"
+            onClick={() => navigate("/audit/report")}
+          >
             <Download className="w-4 h-4" /> Exportar Relatório
           </Button>
           <Button className="flex items-center gap-2">Nova Transação</Button>
