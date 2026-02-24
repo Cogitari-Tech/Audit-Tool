@@ -9,14 +9,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 active:scale-95 ${
+        className={`px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 text-sm shadow-sm ${
           variant === "primary"
-            ? "bg-brand-500 hover:bg-brand-600 text-white shadow-lg hover:shadow-brand-500/30"
+            ? "bg-primary text-primary-foreground hover:brightness-110 hover:shadow-lg hover:shadow-primary/20 active:brightness-90"
             : variant === "secondary"
-              ? "clay text-slate-700 dark:text-slate-200 hover:-translate-y-0.5"
+              ? "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border/50"
               : variant === "danger"
-                ? "bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-red-500/30"
-                : "bg-transparent text-slate-600 dark:text-slate-400 hover:bg-white/10 dark:hover:bg-white/5 hover:text-brand-500 dark:hover:text-brand-400" // ghost style
+                ? "bg-destructive text-destructive-foreground hover:brightness-110 hover:shadow-lg hover:shadow-destructive/20"
+                : "bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground" // ghost style
         } ${className}`}
         {...props}
       />

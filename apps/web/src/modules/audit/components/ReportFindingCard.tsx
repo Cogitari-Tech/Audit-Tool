@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Trash2,
   ChevronDown,
@@ -5,6 +6,7 @@ import {
   Link,
   Mail,
   AlertTriangle,
+  Search,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/Button";
 import type {
@@ -55,23 +57,31 @@ const RISK_LEVELS: { value: FindingRiskLevel; label: string; color: string }[] =
 const STATUS_OPTIONS: { value: FindingStatus; label: string }[] = [
   { value: "open", label: "Pendente" },
   { value: "in_progress", label: "Andamento" },
-  { value: "resolved", label: "Concluído" },
+  { value: "resolved", label: "Urgente" },
   { value: "accepted", label: "Bloqueado" },
 ];
 
-const TASK_TYPES: TaskCategory[] = [
-  "Frontend Bug",
-  "Backend Logic",
-  "Security Vuln",
-  "Database",
-  "DevOps/CI-CD",
-  "Code Quality",
-  "Performance",
-  "Documentation",
-  "Compliance",
-  "Infrastructure",
-  "Dependency",
-  "Architecture",
+const TASK_TYPES: { value: TaskCategory; label: string }[] = [
+  { value: "Frontend Bug", label: "Interface (Frontend)" },
+  { value: "Backend Logic", label: "Lógica de Processamento" },
+  { value: "Security Vuln", label: "Risco de Segurança" },
+  { value: "Database", label: "Dados e Persistência" },
+  { value: "DevOps/CI-CD", label: "Pipeline e Operações" },
+  { value: "Code Quality", label: "Débito Técnico / Código" },
+  { value: "Performance", label: "Performance / Escala" },
+  { value: "Documentation", label: "Falta de Documentação" },
+  { value: "Compliance", label: "Não Conformidade Legal" },
+  { value: "Infrastructure", label: "Arquitetura / Infra" },
+  { value: "Dependency", label: "Gestão de Dependências" },
+  { value: "Architecture", label: "Arquitetura e Design" },
+  { value: "Product UI/UX", label: "Produto / UI-UX" },
+  { value: "Growth/Marketing", label: "Growth / Marketing" },
+  { value: "Sales/CRM", label: "Vendas / CRM" },
+  { value: "Customer Success", label: "Customer Success" },
+  { value: "HR/Recruitment", label: "RH / Recrutamento" },
+  { value: "Finance/Billing", label: "Financeiro / Billing" },
+  { value: "Legal/Privacy", label: "Jurídico / Privacidade" },
+  { value: "Data Science/AI", label: "Data Science / AI" },
 ];
 
 const IMPACT_AREAS: ImpactArea[] = [
@@ -79,6 +89,12 @@ const IMPACT_AREAS: ImpactArea[] = [
   "Operacional",
   "Jurídico",
   "Privacidade",
+  "Financeiro",
+  "Reputacional",
+  "Estratégico",
+  "Experiência do Usuário",
+  "Conformidade Regulatória",
+  "Recursos Humanos",
 ];
 
 const W2H_FIELDS: {
@@ -88,38 +104,39 @@ const W2H_FIELDS: {
 }[] = [
   {
     key: "what",
-    label: "O QUÊ (What)",
-    placeholder: "Descreva o problema encontrado...",
+    label: "Objeto (O que foi identificado)",
+    placeholder: "Descreva detalhadamente o achado ou não conformidade...",
   },
   {
     key: "why",
-    label: "POR QUÊ (Why)",
-    placeholder: "Causa raiz ou justificativa...",
+    label: "Causa (Por que ocorreu)",
+    placeholder: "Identifique a causa raiz ou justificativa técnica...",
   },
   {
     key: "where",
-    label: "ONDE (Where)",
-    placeholder: "Módulo, arquivo, endpoint afetado...",
+    label: "Local (Onde foi detectado)",
+    placeholder: "Módulo, repositório, endpoint ou infraestrutura afetada...",
   },
   {
     key: "when",
-    label: "QUANDO (When)",
-    placeholder: "Data de identificação / prazo para correção...",
+    label: "Cronograma (Quando ocorreu/Prazo)",
+    placeholder: "Data da detecção e estimativa para resolução...",
   },
   {
     key: "who",
-    label: "QUEM (Who)",
-    placeholder: "Responsável pela correção...",
+    label: "Responsabilidade (Quem deve agir)",
+    placeholder: "Defina o responsável direto pela remediação...",
   },
   {
     key: "how",
-    label: "COMO (How)",
-    placeholder: "Ação corretiva detalhada...",
+    label: "Plano de Ação (Como resolver)",
+    placeholder: "Passos detalhados para a correção do problema...",
   },
   {
     key: "howMuch",
-    label: "QUANTO (How Much)",
-    placeholder: "Impacto estimado (hrs, custo, risco)...",
+    label: "Impacto (Custo/Risco)",
+    placeholder:
+      "Estimativa de esforço, custo financeiro ou nível de criticidade...",
   },
 ];
 
@@ -130,6 +147,17 @@ export default function ReportFindingCard({
   onUpdate5W2H,
   onRemove,
 }: ReportFindingCardProps) {
+  const [search, setSearch] = React.useState("");
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const filteredTasks = TASK_TYPES.filter(
+    (t) =>
+      t.label.toLowerCase().includes(search.toLowerCase()) ||
+      t.value.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const selectedTask = TASK_TYPES.find((t) => t.value === finding.task_type);
+
   const riskColor =
     finding.risk_level === "critical"
       ? "border-l-red-600"
@@ -141,12 +169,12 @@ export default function ReportFindingCard({
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 ${riskColor} transition-all duration-200 hover:shadow-md`}
+      className={`bg-card dark:bg-card/40 rounded-xl border border-border transition-all duration-200 hover:shadow-md border-l-4 ${riskColor}`}
     >
       {/* Header */}
       <div className="flex justify-between items-center p-4 pb-0">
         <div className="flex items-center gap-3">
-          <span className="bg-slate-800 dark:bg-slate-700 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+          <span className="bg-foreground/10 text-foreground px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
             Achado #{String(index + 1).padStart(2, "0")}
           </span>
           {finding.risk_level === "critical" && (
@@ -161,7 +189,7 @@ export default function ReportFindingCard({
       <div className="p-4 space-y-5">
         {/* 5W2H Fields */}
         <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400 flex items-center gap-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-1">
             <ChevronDown className="w-3 h-3" /> Análise 5W2H
           </p>
           {W2H_FIELDS.map((field) => (
@@ -171,7 +199,7 @@ export default function ReportFindingCard({
               </label>
               <textarea
                 rows={2}
-                className="text-sm p-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 w-full focus:bg-white dark:focus:bg-slate-800 focus:border-brand-300 dark:focus:border-brand-500 focus:ring-1 focus:ring-brand-200 dark:focus:ring-brand-800 transition-colors resize-none dark:text-slate-200 dark:placeholder-slate-500"
+                className="text-sm p-3 border border-border rounded-lg bg-muted/40 w-full focus:bg-card focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none text-foreground placeholder-muted-foreground/30"
                 placeholder={field.placeholder}
                 value={finding.analysis[field.key]}
                 onChange={(e) =>
@@ -184,27 +212,83 @@ export default function ReportFindingCard({
 
         {/* Risk + Status + Task Type row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Task Type */}
-          <div>
+          {/* Task Type Searchable Selection */}
+          <div className="relative">
             <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block mb-1">
-              Tipo de Task
+              Tipo de Tarefa
             </label>
-            <select
-              className="w-full text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-300 dark:focus:border-brand-500 focus:ring-1 focus:ring-brand-200 dark:focus:ring-brand-800"
-              value={finding.task_type}
-              onChange={(e) =>
-                onUpdate(finding.id, {
-                  task_type: e.target.value as TaskCategory | "",
-                })
-              }
-            >
-              <option value="">Selecione...</option>
-              {TASK_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <div
+                className="w-full text-xs font-medium text-foreground bg-muted/40 p-2.5 rounded-lg border border-border focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10 transition-all cursor-pointer flex justify-between items-center group"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                <span
+                  className={
+                    selectedTask
+                      ? "text-foreground"
+                      : "text-muted-foreground/40"
+                  }
+                >
+                  {selectedTask ? selectedTask.label : "Buscar setor..."}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-muted-foreground/40 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                />
+              </div>
+
+              {isOpen && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in duration-200">
+                  <div className="p-2 border-b border-border bg-muted/20 flex items-center gap-2">
+                    <Search className="w-3.5 h-3.5 text-muted-foreground/40" />
+                    <input
+                      autoFocus
+                      className="bg-transparent border-none outline-none text-xs w-full py-1 placeholder:text-muted-foreground/30"
+                      placeholder="Filtrar setores..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  <div className="max-h-60 overflow-y-auto p-1 custom-scrollbar">
+                    {filteredTasks.length > 0 ? (
+                      filteredTasks.map((t) => (
+                        <div
+                          key={t.value}
+                          className={`p-2.5 text-xs rounded-lg cursor-pointer transition-colors flex items-center justify-between ${
+                            finding.task_type === t.value
+                              ? "bg-primary text-white"
+                              : "hover:bg-muted text-foreground"
+                          }`}
+                          onClick={() => {
+                            onUpdate(finding.id, { task_type: t.value });
+                            setIsOpen(false);
+                            setSearch("");
+                          }}
+                        >
+                          {t.label}
+                          {finding.task_type === t.value && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-muted-foreground/40 text-[10px] uppercase font-bold italic">
+                        Nenhum resultado encontrado
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            {isOpen && (
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => {
+                  setIsOpen(false);
+                  setSearch("");
+                }}
+              />
+            )}
           </div>
 
           {/* Risk Level */}
@@ -249,7 +333,7 @@ export default function ReportFindingCard({
                     checked={finding.status === s.value}
                     onChange={() => onUpdate(finding.id, { status: s.value })}
                   />
-                  <span className="block text-center text-[10px] font-bold py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 dark:text-slate-300 transition-all peer-checked:bg-slate-800 dark:peer-checked:bg-slate-700 peer-checked:text-white peer-checked:border-slate-800 dark:peer-checked:border-slate-700">
+                  <span className="block text-center text-[10px] font-bold py-1.5 rounded-lg border border-border text-muted-foreground transition-all peer-checked:bg-foreground peer-checked:text-background peer-checked:border-foreground">
                     {s.label}
                   </span>
                 </label>
@@ -277,7 +361,7 @@ export default function ReportFindingCard({
                     onUpdate(finding.id, { impacted_areas: next });
                   }}
                 />
-                <span className="block text-[10px] font-bold py-1.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 dark:text-slate-300 transition-all peer-checked:bg-brand-600 peer-checked:text-white peer-checked:border-brand-600">
+                <span className="block text-[10px] font-bold py-1.5 px-3 rounded-lg border border-border text-muted-foreground transition-all peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary">
                   {area}
                 </span>
               </label>
@@ -292,7 +376,7 @@ export default function ReportFindingCard({
           </label>
           <textarea
             rows={3}
-            className="text-xs font-mono p-3 border border-slate-800 dark:border-slate-900 rounded-lg bg-slate-900 dark:bg-slate-950 text-emerald-400 w-full resize-none placeholder:text-slate-600 focus:ring-1 focus:ring-brand-500"
+            className="text-xs font-mono p-3 border border-border rounded-lg bg-black text-emerald-400 w-full resize-none placeholder:text-muted-foreground/30 focus:ring-4 focus:ring-primary/10 transition-all outline-none"
             placeholder="// Cole seu código ou log aqui..."
             value={finding.code_snippet ?? ""}
             onChange={(e) =>
@@ -311,7 +395,7 @@ export default function ReportFindingCard({
               <div key={li} className="flex gap-1.5 items-center">
                 <input
                   type="text"
-                  className="text-xs flex-1 border border-slate-200 dark:border-slate-700 px-2 py-1.5 rounded bg-slate-50 dark:bg-slate-800/50 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-300 dark:focus:border-brand-500 focus:ring-1 focus:ring-brand-200 dark:focus:ring-brand-800"
+                  className="text-xs flex-1 border border-border px-2 py-1.5 rounded bg-muted/40 text-foreground placeholder:text-muted-foreground/30 focus:bg-card focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all outline-none"
                   placeholder="URL da evidência"
                   value={link}
                   onChange={(e) => {
@@ -339,7 +423,7 @@ export default function ReportFindingCard({
                   evidence_links: [...finding.evidence_links, ""],
                 })
               }
-              className="text-brand-600 dark:text-brand-400 text-[10px] font-bold uppercase hover:underline"
+              className="text-primary text-[10px] font-bold uppercase hover:underline"
             >
               + Adicionar Link
             </button>
@@ -351,7 +435,7 @@ export default function ReportFindingCard({
           <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase flex items-center gap-1.5 cursor-pointer">
             <input
               type="checkbox"
-              className="accent-brand-600"
+              className="accent-primary"
               checked={finding.should_notify}
               onChange={(e) =>
                 onUpdate(finding.id, {
@@ -365,7 +449,7 @@ export default function ReportFindingCard({
           {finding.should_notify && (
             <input
               type="email"
-              className="mt-2 text-sm p-2 border border-slate-200 dark:border-slate-700 rounded w-full bg-white dark:bg-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-brand-300 dark:focus:border-brand-500 focus:ring-1 focus:ring-brand-200 dark:focus:ring-brand-800"
+              className="mt-2 text-sm p-2 border border-border rounded w-full bg-muted/40 text-foreground placeholder:text-muted-foreground/30 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all outline-none"
               placeholder="E-mail do responsável"
               value={finding.notify_email ?? ""}
               onChange={(e) =>
