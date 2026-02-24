@@ -5,6 +5,7 @@ const AuditDashboard = lazy(() => import("./pages/AuditDashboard"));
 const AuditPrograms = lazy(() => import("./pages/AuditPrograms"));
 const AuditFindings = lazy(() => import("./pages/AuditFindings"));
 const AuditActionPlans = lazy(() => import("./pages/AuditActionPlans"));
+const ReportBuilder = lazy(() => import("./pages/ReportBuilder"));
 
 export const auditModuleConfig: ModuleConfig = {
   id: "audit",
@@ -42,6 +43,16 @@ export const auditModuleConfig: ModuleConfig = {
       element: <AuditActionPlans />,
       handle: { title: "Planos de Ação" },
     },
+    {
+      path: "/audit/report",
+      element: <ReportBuilder />,
+      handle: { title: "Gerar Relatório" },
+    },
+    {
+      path: "/audit/report/:programId",
+      element: <ReportBuilder />,
+      handle: { title: "Relatório de Auditoria" },
+    },
   ],
 
   navigation: [
@@ -64,6 +75,11 @@ export const auditModuleConfig: ModuleConfig = {
       label: "Planos de Ação",
       path: "/audit/action-plans",
       icon: "ClipboardCheck",
+    },
+    {
+      label: "Relatório",
+      path: "/audit/report",
+      icon: "FileOutput",
     },
   ],
 

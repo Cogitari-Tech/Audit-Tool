@@ -162,3 +162,77 @@ export interface AuditDashboardStats {
   complianceRate: number;
   pendingActionPlans: number;
 }
+
+// ─── Report Generation (5W2H) ────────────────────────────
+
+export type ReportStatus = "draft" | "signed" | "exported";
+export type ExportFormat = "pdf" | "docx" | "txt" | "json";
+
+export type TaskCategory =
+  | "Frontend Bug"
+  | "Backend Logic"
+  | "Security Vuln"
+  | "Database"
+  | "DevOps/CI-CD"
+  | "Code Quality"
+  | "Performance"
+  | "Documentation"
+  | "Compliance"
+  | "Infrastructure"
+  | "Dependency"
+  | "Architecture";
+
+export type ImpactArea =
+  | "Segurança"
+  | "Operacional"
+  | "Jurídico"
+  | "Privacidade";
+
+/** 5W2H methodology applied to audit findings */
+export interface Finding5W2H {
+  what: string; // O QUE: Descrição do problema encontrado
+  why: string; // POR QUÊ: Causa raiz / justificativa
+  where: string; // ONDE: Localização (módulo, arquivo, endpoint)
+  when: string; // QUANDO: Data de identificação / prazo
+  who: string; // QUEM: Responsável pela correção
+  how: string; // COMO: Ação corretiva detalhada
+  howMuch: string; // QUANTO: Impacto estimado (tempo, custo, risco)
+}
+
+export interface ReportFinding {
+  id: string;
+  finding_id: string;
+  analysis: Finding5W2H;
+  code_snippet?: string;
+  task_type: TaskCategory | "";
+  risk_level: FindingRiskLevel;
+  status: FindingStatus;
+  impacted_areas: ImpactArea[];
+  evidence_links: string[];
+  evidence_image_url?: string;
+  notify_email?: string;
+  should_notify: boolean;
+}
+
+export interface ReportSignature {
+  name: string;
+  role: string;
+  signed_at: string;
+}
+
+export interface AuditReport {
+  id?: string;
+  program_id: string;
+  doc_id: string;
+  client_name: string;
+  project_name: string;
+  environment: string;
+  start_date: string;
+  end_date: string;
+  lead_auditor: string;
+  executive_summary: string;
+  final_opinion: string;
+  findings: ReportFinding[];
+  signatures: ReportSignature[];
+  status: ReportStatus;
+}
