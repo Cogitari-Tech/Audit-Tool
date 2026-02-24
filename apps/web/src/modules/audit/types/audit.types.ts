@@ -87,6 +87,8 @@ export interface AuditFinding {
   created_by: string;
   created_at: string;
   resolved_at: string | null;
+  source_type?: "manual" | "github";
+  source_ref?: string;
   // Joined
   program?: AuditProgram;
 }
@@ -188,7 +190,8 @@ export type TaskCategory =
   | "HR/Recruitment"
   | "Finance/Billing"
   | "Legal/Privacy"
-  | "Data Science/AI";
+  | "Data Science/AI"
+  | "GitHub Governance";
 
 export type ImpactArea =
   | "Segurança"
@@ -200,7 +203,8 @@ export type ImpactArea =
   | "Estratégico"
   | "Experiência do Usuário"
   | "Conformidade Regulatória"
-  | "Recursos Humanos";
+  | "Recursos Humanos"
+  | "Governança de Código";
 
 /** 5W2H methodology applied to audit findings */
 export interface Finding5W2H {
