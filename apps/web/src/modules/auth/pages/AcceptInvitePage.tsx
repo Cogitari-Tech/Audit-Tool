@@ -110,7 +110,15 @@ export function AcceptInvitePage() {
           <img
             src="/images/logo-cogitari.png"
             alt="Cogitari"
-            className="h-8 w-auto mix-blend-screen"
+            className="h-8 w-auto block dark:hidden transition-all opacity-90 hover:opacity-100"
+          />
+          <img
+            src="/images/logo-cogitari-dark.png"
+            alt="Cogitari"
+            className="h-8 w-auto hidden dark:block transition-all opacity-90 hover:opacity-100"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/images/logo-cogitari.png";
+            }}
           />
           <span className="text-secondary-foreground/40 font-mono text-xs tracking-widest uppercase border border-border/30 px-3 py-1 bg-background/5">
             System Auth v2.0
@@ -164,7 +172,16 @@ export function AcceptInvitePage() {
             <img
               src="/images/logo-cogitari.png"
               alt="Cogitari"
-              className="h-8 w-auto"
+              className="h-8 w-auto block dark:hidden transition-all opacity-90 hover:opacity-100"
+            />
+            <img
+              src="/images/logo-cogitari-dark.png"
+              alt="Cogitari"
+              className="h-8 w-auto hidden dark:block transition-all opacity-90 hover:opacity-100"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  "/images/logo-cogitari.png";
+              }}
             />
           </div>
 
