@@ -64,7 +64,9 @@ export function useAudit() {
       if (err) throw err;
       store.setPrograms(data ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar programas");
+      setError(
+        err instanceof Error ? err.message : "Erro ao carregar programas",
+      );
     } finally {
       setLoading(false);
     }
@@ -86,14 +88,15 @@ export function useAudit() {
         store.addProgram(data as AuditProgram);
         return data;
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Erro ao criar programa";
+        const msg =
+          err instanceof Error ? err.message : "Erro ao criar programa";
         setError(msg);
         throw err;
       } finally {
         setLoading(false);
       }
     },
-    [store, getTenantId]
+    [store, getTenantId],
   );
 
   const updateProgram = useCallback(
@@ -114,7 +117,7 @@ export function useAudit() {
         setLoading(false);
       }
     },
-    [store]
+    [store],
   );
 
   const deleteProgram = useCallback(
@@ -135,7 +138,7 @@ export function useAudit() {
         setLoading(false);
       }
     },
-    [store]
+    [store],
   );
 
   // ─── Checklists ────────────────────────────────────────
@@ -159,7 +162,7 @@ export function useAudit() {
 
       if (err) throw err;
     },
-    []
+    [],
   );
 
   const populateChecklistFromFramework = useCallback(
@@ -191,7 +194,7 @@ export function useAudit() {
         setLoading(false);
       }
     },
-    []
+    [],
   );
 
   // ─── Findings ──────────────────────────────────────────
@@ -233,7 +236,7 @@ export function useAudit() {
         setLoading(false);
       }
     },
-    [store]
+    [store],
   );
 
   const updateFinding = useCallback(
@@ -246,7 +249,7 @@ export function useAudit() {
       if (err) throw err;
       store.updateFinding(id, updates);
     },
-    [store]
+    [store],
   );
 
   // ─── Action Plans ──────────────────────────────────────
@@ -257,7 +260,7 @@ export function useAudit() {
       const { data, error: err } = await supabase
         .from("audit_action_plans")
         .select(
-          "*, finding:audit_findings(id, title, program:audit_programs(id, name))"
+          "*, finding:audit_findings(id, title, source_type, source_ref, program:audit_programs(id, name))",
         )
         .order("created_at", { ascending: false });
 
@@ -265,7 +268,7 @@ export function useAudit() {
       store.setActionPlans(data ?? []);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Erro ao carregar planos de ação"
+        err instanceof Error ? err.message : "Erro ao carregar planos de ação",
       );
     } finally {
       setLoading(false);
@@ -287,14 +290,14 @@ export function useAudit() {
         return data;
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Erro ao criar plano de ação"
+          err instanceof Error ? err.message : "Erro ao criar plano de ação",
         );
         throw err;
       } finally {
         setLoading(false);
       }
     },
-    [store]
+    [store],
   );
 
   const updateActionPlan = useCallback(
@@ -307,24 +310,24 @@ export function useAudit() {
       if (err) throw err;
       store.updateActionPlan(id, updates);
     },
-    [store]
+    [store],
   );
 
   // ─── Dashboard stats ──────────────────────────────────
   const getDashboardStats = useMemo((): AuditDashboardStats => {
     const activePrograms = store.programs.filter(
-      (p) => p.status === "in_progress" || p.status === "draft"
+      (p) => p.status === "in_progress" || p.status === "draft",
     ).length;
 
     const highRiskFindings = store.findings.filter(
       (f) =>
         (f.risk_level === "critical" || f.risk_level === "high") &&
-        f.status !== "resolved"
+        f.status !== "resolved",
     ).length;
 
     const totalFindings = store.findings.length;
     const resolvedFindings = store.findings.filter(
-      (f) => f.status === "resolved" || f.status === "accepted"
+      (f) => f.status === "resolved" || f.status === "accepted",
     ).length;
     const complianceRate =
       totalFindings > 0
@@ -332,10 +335,15 @@ export function useAudit() {
         : 100;
 
     const pendingActionPlans = store.actionPlans.filter(
-      (ap) => ap.status === "pending" || ap.status === "in_progress"
+      (ap) => ap.status === "pending" || ap.status === "in_progress",
     ).length;
 
-    return { activePrograms, highRiskFindings, complianceRate, pendingActionPlans };
+    return {
+      activePrograms,
+      highRiskFindings,
+      complianceRate,
+      pendingActionPlans,
+    };
   }, [store.programs, store.findings, store.actionPlans]);
 
   // ─── Bootstrap ─────────────────────────────────────────
