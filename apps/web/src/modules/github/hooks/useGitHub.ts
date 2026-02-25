@@ -204,6 +204,86 @@ export function useGitHub() {
     loadAll();
   }, [loadAll]);
 
+  // ─── Actions Logic ─────────────────────────────────────────────
+
+  const createIssue = async (
+    repoId: string,
+    title: string,
+    body: string,
+    findingId?: string,
+  ) => {
+    try {
+      const { data, error: err } = await supabase.functions.invoke(
+        "github-actions",
+        {
+          body: {
+            action: "create_issue",
+            repo_id: repoId,
+            title,
+            body,
+            finding_id: findingId,
+          },
+        },
+      );
+      if (err) throw err;
+      if (data?.error) throw new Error(data.error);
+
+      await loadIssues(); // Refresh list
+      return data.issue;
+    } catch (err: any) {
+      console.error("Failed to create issue:", err);
+      throw err;
+    }
+  };
+
+  const closeIssue = async (repoId: string, issueNumber: number) => {
+    try {
+      const { data, error: err } = await supabase.functions.invoke(
+        "github-actions",
+        {
+          body: {
+            action: "close_issue",
+            repo_id: repoId,
+            issue_number: issueNumber,
+          },
+        },
+      );
+      if (err) throw err;
+      if (data?.error) throw new Error(data.error);
+
+      await loadIssues(); // Refresh list
+      return data.issue;
+    } catch (err: any) {
+      console.error("Failed to close issue:", err);
+      throw err;
+    }
+  };
+
+  const linkPullRequestToFinding = async (prId: string, findingId: string) => {
+    setLoading(true);
+    try {
+      const { error: err } = await supabase
+        .from("github_pull_requests")
+        .update({ linked_finding_id: findingId })
+        .eq("id", prId);
+
+      if (err) throw err;
+
+      // Update local state optimistic
+      setPullRequests((prev) =>
+        prev.map((pr) =>
+          pr.id === prId ? { ...pr, linked_finding_id: findingId } : pr,
+        ),
+      );
+    } catch (err: any) {
+      console.error("Failed to link PR:", err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     // Data
     installations,
@@ -228,5 +308,8 @@ export function useGitHub() {
     loadSecurityAlerts,
     loadEvents,
     loadSnapshots,
+    createIssue,
+    closeIssue,
+    linkPullRequestToFinding,
   };
 }

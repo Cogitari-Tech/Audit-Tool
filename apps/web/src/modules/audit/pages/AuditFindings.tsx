@@ -4,6 +4,8 @@ import { Button } from "@/shared/components/ui/Button";
 import { Input } from "@/shared/components/ui/Input";
 import { Select } from "@/shared/components/ui/Select";
 import { useAudit } from "../hooks/useAudit";
+import { useGitHub } from "../../github/hooks/useGitHub";
+import { Github, Loader2 } from "lucide-react";
 import type {
   FindingRiskLevel,
   FindingStatus,
@@ -42,8 +44,13 @@ const STATUS_LABELS: Record<FindingStatus, string> = {
 export default function AuditFindings() {
   const { findings, programs, loading, createFinding, updateFinding } =
     useAudit();
+  const { repositories, createIssue } = useGitHub();
 
   const [showModal, setShowModal] = useState(false);
+  const [showGithubModal, setShowGithubModal] = useState<string | null>(null); // finding id
+  const [selectedRepoId, setSelectedRepoId] = useState("");
+  const [creatingIssue, setCreatingIssue] = useState(false);
+
   const [search, setSearch] = useState("");
   const [filterRisk, setFilterRisk] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
@@ -77,6 +84,26 @@ export default function AuditFindings() {
       });
     } catch {
       // error shown via hook
+    }
+  };
+
+  const handleCreateGitHubIssue = async (finding: (typeof findings)[0]) => {
+    if (!selectedRepoId) return;
+    setCreatingIssue(true);
+    try {
+      await createIssue(
+        selectedRepoId,
+        `[Auditoria] ${finding.title}`,
+        finding.description || "",
+        finding.id,
+      );
+      // Update local state is handled implicitly or we can just refresh
+      setShowGithubModal(null);
+      setSelectedRepoId("");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCreatingIssue(false);
     }
   };
 
@@ -260,6 +287,12 @@ export default function AuditFindings() {
                         />
                         {STATUS_LABELS[finding.status]}
                       </span>
+                      {finding.source_type === "github" && (
+                        <span className="flex items-center gap-1 mt-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                          <Github className="w-3 h-3" />
+                          {finding.source_ref?.split("#")[0] ?? "GitHub"}
+                        </span>
+                      )}
                     </td>
                     <td className="px-10 py-8 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -288,6 +321,16 @@ export default function AuditFindings() {
                             className="rounded-xl text-[10px] font-bold uppercase tracking-widest px-4 py-3 shadow-lg shadow-primary/20"
                           >
                             Resolver
+                          </Button>
+                        )}
+                        {finding.source_type !== "github" && (
+                          <Button
+                            variant="ghost"
+                            onClick={() => setShowGithubModal(finding.id)}
+                            className="bg-zinc-100 text-zinc-900 border border-zinc-200 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-800 rounded-xl text-[10px] font-bold uppercase tracking-widest px-4 py-3 flex items-center gap-2"
+                          >
+                            <Github className="w-4 h-4" />
+                            Criar Issue
                           </Button>
                         )}
                       </div>
@@ -415,6 +458,66 @@ export default function AuditFindings() {
                 className="py-4 rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all font-bold uppercase tracking-widest text-[10px] px-10"
               >
                 {loading ? "Processando..." : "Registrar Achado"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GitHub Issue Modal */}
+      {showGithubModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-xl">
+          <div className="glass-card bg-white/5 border border-white/10 rounded-[3rem] p-12 max-w-lg w-full shadow-2xl space-y-8 relative scale-up">
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold text-foreground font-display tracking-tight flex items-center gap-2">
+                <Github className="w-6 h-6" />
+                Criar Issue no GitHub
+              </h3>
+              <p className="text-sm text-muted-foreground/60 font-medium">
+                Selecione o repositório para abrir uma issue bidirecional
+                vinculada a este achado permanentemente.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest ml-1">
+                Repositório de Destino
+              </label>
+              <Select
+                value={selectedRepoId}
+                onChange={(e) => setSelectedRepoId(e.target.value)}
+                className="bg-foreground/5 border-white/5 rounded-2xl px-6 py-4 w-full"
+              >
+                <option value="">Selecione o repositório...</option>
+                {repositories.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.full_name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowGithubModal(null);
+                  setSelectedRepoId("");
+                }}
+                className="py-4 rounded-2xl bg-foreground/5 text-muted-foreground hover:bg-white hover:text-black font-bold uppercase tracking-widest text-[10px]"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  const f = findings.find((x) => x.id === showGithubModal);
+                  if (f) handleCreateGitHubIssue(f);
+                }}
+                disabled={!selectedRepoId || creatingIssue}
+                className="py-4 rounded-2xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-black font-bold uppercase tracking-widest text-[10px] px-8 flex items-center gap-2"
+              >
+                {creatingIssue && <Loader2 className="w-4 h-4 animate-spin" />}
+                {creatingIssue ? "Criando..." : "Confirmar e Criar"}
               </Button>
             </div>
           </div>
