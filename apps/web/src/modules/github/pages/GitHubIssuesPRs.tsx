@@ -7,14 +7,38 @@ import {
   CheckCircle,
   Clock,
   Filter,
+  Loader2,
 } from "lucide-react";
+import { useAudit } from "../../audit/hooks/useAudit";
+import { Select, Button } from "@/shared/components/ui";
 
 type Tab = "prs" | "issues";
 
 export default function GitHubIssuesPRs() {
-  const { pullRequests, issues, loading } = useGitHub();
+  const { pullRequests, issues, loading, linkPullRequestToFinding } =
+    useGitHub();
+  const { findings } = useAudit();
+
   const [activeTab, setActiveTab] = useState<Tab>("prs");
   const [filterState, setFilterState] = useState<string>("all");
+
+  const [linkModalPrId, setLinkModalPrId] = useState<string | null>(null);
+  const [selectedFindingId, setSelectedFindingId] = useState("");
+  const [linking, setLinking] = useState(false);
+
+  const handleLinkPR = async () => {
+    if (!linkModalPrId || !selectedFindingId) return;
+    setLinking(true);
+    try {
+      await linkPullRequestToFinding(linkModalPrId, selectedFindingId);
+      setLinkModalPrId(null);
+      setSelectedFindingId("");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLinking(false);
+    }
+  };
 
   const filteredPRs =
     filterState === "all"
@@ -113,6 +137,11 @@ export default function GitHubIssuesPRs() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    {pr.linked_finding_id && (
+                      <span className="text-[9px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-widest">
+                        Vinculado
+                      </span>
+                    )}
                     {pr.review_count === 0 && pr.state === "merged" && (
                       <span className="text-[9px] font-bold bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">
                         Sem Review
@@ -139,6 +168,17 @@ export default function GitHubIssuesPRs() {
                       <Clock className="w-3 h-3" />
                       {pr.time_to_merge_hours}h para merge
                     </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground mt-4 pt-4 border-t border-border/10">
+                  {!pr.linked_finding_id && (
+                    <button
+                      onClick={() => setLinkModalPrId(pr.id)}
+                      className="flex items-center gap-1.5 hover:text-primary transition-colors hover:bg-primary/5 px-3 py-2 rounded-lg font-bold uppercase tracking-widest"
+                    >
+                      <CheckCircle className="w-3 h-3" />
+                      Vincular a Achado
+                    </button>
                   )}
                 </div>
               </div>
@@ -194,7 +234,7 @@ export default function GitHubIssuesPRs() {
                   </div>
                 </div>
                 {issue.labels.length > 0 && (
-                  <div className="flex gap-1 flex-wrap">
+                  <div className="flex gap-1 flex-wrap mt-2">
                     {issue.labels.map((label, i) => (
                       <span
                         key={i}
@@ -205,9 +245,80 @@ export default function GitHubIssuesPRs() {
                     ))}
                   </div>
                 )}
+                <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground mt-4 pt-4 border-t border-border/10">
+                  {issue.state === "open" ? (
+                    <button className="flex items-center gap-1.5 hover:text-emerald-500 transition-colors hover:bg-emerald-500/5 px-3 py-2 rounded-lg font-bold uppercase tracking-widest">
+                      <CheckCircle className="w-3 h-3" />
+                      Resolver via Plano de Ação
+                    </button>
+                  ) : null}
+                  {!issue.linked_finding_id && (
+                    <button className="flex items-center gap-1.5 hover:text-primary transition-colors hover:bg-primary/5 px-3 py-2 rounded-lg font-bold uppercase tracking-widest">
+                      <AlertCircle className="w-3 h-3" />
+                      Criar Achado
+                    </button>
+                  )}
+                </div>
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {/* Link PR Modal */}
+      {linkModalPrId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-xl">
+          <div className="glass-card bg-white/5 border border-white/10 rounded-[3rem] p-12 max-w-lg w-full shadow-2xl space-y-8 relative scale-up">
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold text-foreground font-display tracking-tight flex items-center gap-2">
+                <CheckCircle className="w-6 h-6" />
+                Vincular a Achado
+              </h3>
+              <p className="text-sm text-muted-foreground/60 font-medium">
+                Selecione o achado de auditoria que motivou ou está resolvido
+                por este Pull Request.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest ml-1">
+                Achado de Auditoria
+              </label>
+              <Select
+                value={selectedFindingId}
+                onChange={(e) => setSelectedFindingId(e.target.value)}
+                className="bg-foreground/5 border-white/5 rounded-2xl px-6 py-4 w-full"
+              >
+                <option value="">Selecione o achado...</option>
+                {findings.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    [{f.risk_level.toUpperCase()}] {f.title}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setLinkModalPrId(null);
+                  setSelectedFindingId("");
+                }}
+                className="py-4 rounded-2xl bg-foreground/5 text-muted-foreground hover:bg-white hover:text-black font-bold uppercase tracking-widest text-[10px]"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleLinkPR}
+                disabled={!selectedFindingId || linking}
+                className="py-4 rounded-2xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-black font-bold uppercase tracking-widest text-[10px] px-8 flex items-center gap-2"
+              >
+                {linking && <Loader2 className="w-4 h-4 animate-spin" />}
+                {linking ? "Vinculando..." : "Confirmar Vínculo"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
