@@ -3,6 +3,7 @@ import { useParams, Navigate } from "react-router-dom";
 import { supabase } from "../../../config/supabase";
 import type { Invitation } from "../types/auth.types";
 import { Activity, ShieldCheck, Database } from "lucide-react";
+import { ThemeToggle } from "../../../shared/components/ui/ThemeToggle";
 
 export function AcceptInvitePage() {
   const { token } = useParams<{ token: string }>();
@@ -166,6 +167,9 @@ export function AcceptInvitePage() {
 
       {/* Right side: Form */}
       <div className="flex-1 flex flex-col justify-center p-8 sm:p-12 lg:p-16 bg-background relative">
+        <div className="absolute top-6 right-6 z-50">
+          <ThemeToggle />
+        </div>
         <div className="w-full max-w-sm mx-auto space-y-8">
           {/* Mobile Logo */}
           <div className="md:hidden flex justify-start mb-8 pb-8 border-b border-border">
@@ -336,7 +340,7 @@ export function AcceptInvitePage() {
         {/* Footer info strictly positioned */}
         <div className="absolute bottom-8 left-0 right-0 text-center">
           <p className="text-[10px] font-mono text-muted-foreground uppercase opacity-50 tracking-[0.2em]">
-            V 2.5.0 · AMURI AUDIT
+            V 3.0.0 · COGITARI GOVERNANCE
           </p>
         </div>
       </div>

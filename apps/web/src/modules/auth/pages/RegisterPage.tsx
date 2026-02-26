@@ -1,14 +1,19 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Navigate } from "react-router-dom";
-import { ShieldCheck, Database, Activity } from "lucide-react";
+import { Navigate, Link } from "react-router-dom";
+import { ShieldCheck, Database } from "lucide-react";
+import { supabase } from "../../../config/supabase";
 import { ThemeToggle } from "../../../shared/components/ui/ThemeToggle";
 
-export function LoginPage() {
-  const { signIn, signInWithGoogle, signInWithGitHub, user, loading } =
+export function RegisterPage() {
+  const { signUp, signIn, signInWithGoogle, signInWithGitHub, user, loading } =
     useAuth();
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [companyName, setCompanyName] = useState("");
+
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -20,15 +25,40 @@ export function LoginPage() {
     setError(null);
     setSubmitting(true);
 
-    const { error: authError } = await signIn(email, password);
-    if (authError) {
-      setError(
-        authError.message === "Invalid login credentials"
-          ? "E-mail ou senha incorretos."
-          : "Erro ao fazer login. Tente novamente.",
-      );
+    if (password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres.");
+      setSubmitting(false);
+      return;
     }
-    setSubmitting(false);
+
+    try {
+      // Create user and pass metadata for the trigger to use
+      const { error: authError } = await signUp(email, password, {
+        name,
+        companyName,
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      // Auto-login to bypass the confirmation requirement in local dev
+      // Ensure any existing stale session (e.g. teste@cogitari.com.br) is completely removed first
+      await supabase.auth.signOut();
+      const { error: loginError } = await signIn(email, password);
+
+      if (loginError) {
+        // Fallback message if login also fails (e.g. if Supabase strictly blocks unconfirmed emails on sign in)
+        setError(
+          "Conta criada com sucesso! Por favor, confirme seu e-mail para acessar.",
+        );
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Erro ao criar conta. Tente novamente.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -43,7 +73,7 @@ export function LoginPage() {
       </div>
 
       {/* Left side: Hero / Branding */}
-      <div className="hidden md:flex flex-col justify-between w-[60%] p-16 lg:p-24 relative z-10 overflow-hidden">
+      <div className="hidden md:flex flex-col justify-between w-[50%] lg:w-[60%] p-16 lg:p-24 relative z-10 overflow-hidden">
         <div className="flex items-center justify-between">
           <img
             src="/images/logo-cogitari.png"
@@ -64,13 +94,13 @@ export function LoginPage() {
         </div>
 
         <div className="space-y-10 mt-12 flex-grow flex flex-col justify-center">
-          <h1 className="text-6xl lg:text-[5rem] font-bold tracking-tight text-foreground leading-[1.05]">
+          <h1 className="text-5xl lg:text-[4.5rem] font-bold tracking-tight text-foreground leading-[1.05]">
             Relatórios com <br />
             <span className="text-primary">Precisão Absoluta.</span>
           </h1>
           <p className="max-w-md text-lg text-muted-foreground font-medium leading-relaxed">
-            Plataforma avançada de auditoria e compliance financeiro. Gestão
-            estratégica de dados com interface intuitiva e refinada.
+            Plataforma avançada de auditoria e compliance corporativo. Crie sua
+            conta e comece a gerenciar seus dados estratégicos.
           </p>
 
           <div className="flex gap-10 pt-10 border-t border-border/10 w-fit">
@@ -78,7 +108,7 @@ export function LoginPage() {
               <div className="p-2 bg-primary/10 rounded-lg">
                 <ShieldCheck className="text-primary w-5 h-5" />
               </div>
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest leading-tight">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest leading-tight">
                 Privacidade
                 <br />
                 Garantida
@@ -88,20 +118,10 @@ export function LoginPage() {
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Database className="text-primary w-5 h-5" />
               </div>
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest leading-tight">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest leading-tight">
                 Dados
                 <br />
                 Estruturados
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Activity className="text-primary w-5 h-5" />
-              </div>
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest leading-tight">
-                Insight
-                <br />
-                Estratégico
               </span>
             </div>
           </div>
@@ -112,11 +132,11 @@ export function LoginPage() {
         </div>
       </div>
 
-      {/* Right side: Login Card Section */}
-      <div className="flex-1 flex flex-col justify-center p-6 sm:p-12 lg:p-16 relative z-20">
-        <div className="glass-panel p-10 sm:p-12 rounded-[2rem] soft-shadow w-full max-w-md mx-auto space-y-8 border border-white/10 dark:border-white/5">
+      {/* Right side: Register Card Section */}
+      <div className="flex-1 flex flex-col justify-center p-6 sm:p-12 lg:p-16 relative z-20 h-full overflow-y-auto">
+        <div className="glass-panel p-8 sm:p-10 rounded-[2rem] soft-shadow w-full max-w-md mx-auto space-y-8 border border-white/10 dark:border-white/5 my-auto">
           {/* Mobile Logo */}
-          <div className="md:hidden flex justify-center mb-8">
+          <div className="md:hidden flex justify-center mb-6">
             <img
               src="/images/logo-cogitari.png"
               alt="Cogitari"
@@ -133,21 +153,57 @@ export function LoginPage() {
             />
           </div>
 
-          <div className="space-y-3">
-            <h2 className="text-3xl font-bold tracking-tight">Acesso</h2>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold tracking-tight">Criar Conta</h2>
             <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-60">
-              Identificação do Auditor
+              Inicie seu período de testes
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 px-4 py-3 rounded-xl text-sm text-destructive font-medium animate-in fade-in slide-in-from-top-1">
                 {error}
               </div>
             )}
 
-            <div className="space-y-5">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label
+                  htmlFor="name"
+                  className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70 ml-1"
+                >
+                  Nome Completo
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Seu nome"
+                  className="w-full px-5 py-3 text-sm bg-background/50 border border-border/40 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all rounded-xl font-medium placeholder:opacity-50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="company"
+                  className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70 ml-1"
+                >
+                  Empresa / Organização
+                </label>
+                <input
+                  id="company"
+                  type="text"
+                  required
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Nome da sua empresa"
+                  className="w-full px-5 py-3 text-sm bg-background/50 border border-border/40 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all rounded-xl font-medium placeholder:opacity-50"
+                />
+              </div>
+
               <div className="space-y-2">
                 <label
                   htmlFor="email"
@@ -162,26 +218,17 @@ export function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu.nome@cogitari.com.br"
-                  className="w-full px-5 py-3.5 text-sm bg-background/50 border border-border/40 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all rounded-xl font-medium placeholder:opacity-50"
+                  className="w-full px-5 py-3 text-sm bg-background/50 border border-border/40 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all rounded-xl font-medium placeholder:opacity-50"
                 />
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between ml-1">
-                  <label
-                    htmlFor="password"
-                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70"
-                  >
-                    Senha de segurança
-                  </label>
-                  <a
-                    href="/forgot-password"
-                    title="Recuperar senha"
-                    className="text-[11px] font-bold text-primary hover:brightness-110 transition-all uppercase tracking-widest"
-                  >
-                    Esqueci minha senha
-                  </a>
-                </div>
+                <label
+                  htmlFor="password"
+                  className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70 ml-1"
+                >
+                  Senha de segurança
+                </label>
                 <input
                   id="password"
                   type="password"
@@ -189,7 +236,8 @@ export function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-5 py-3.5 text-sm bg-background/50 border border-border/40 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all rounded-xl font-medium tracking-widest placeholder:opacity-50"
+                  className="w-full px-5 py-3 text-sm bg-background/50 border border-border/40 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all rounded-xl font-medium tracking-widest placeholder:opacity-50"
+                  minLength={6}
                 />
               </div>
             </div>
@@ -197,10 +245,20 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={submitting || loading}
-              className="w-full bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:brightness-110 shadow-lg shadow-primary/20 focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:opacity-50 transition-all rounded-xl active:scale-95"
+              className="w-full bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:brightness-110 shadow-lg shadow-primary/20 focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:opacity-50 transition-all rounded-xl active:scale-95 mt-2"
             >
-              {submitting ? "Autenticando..." : "Iniciar Sessão"}
+              {submitting ? "Criando conta..." : "Criar Conta"}
             </button>
+
+            <p className="text-center text-sm text-muted-foreground/80 font-medium">
+              Já tem uma conta?{" "}
+              <Link
+                to="/login"
+                className="text-primary hover:underline font-bold"
+              >
+                Fazer login
+              </Link>
+            </p>
           </form>
 
           <div className="relative pt-2">
