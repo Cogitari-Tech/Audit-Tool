@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { supabase } from "../../../config/supabase";
 import { Activity, ShieldCheck, Database } from "lucide-react";
+import { ThemeToggle } from "../../../shared/components/ui/ThemeToggle";
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -30,6 +31,9 @@ export function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row relative overflow-hidden font-sans">
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
       {/* Dynamic Background decor */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[150px] rounded-full animate-pulse" />
