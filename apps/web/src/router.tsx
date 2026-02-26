@@ -80,7 +80,7 @@ export const createAppRouter = () =>
           element: (
             <div className="p-8">
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Bem-vindo ao Amuri Audit
+                Bem-vindo ao Cogitari Governance
               </h1>
             </div>
           ),
