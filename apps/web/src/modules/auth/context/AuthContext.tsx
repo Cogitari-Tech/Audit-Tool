@@ -12,6 +12,11 @@ import type { AuthState, AuthUser, Tenant, Role } from "../types/auth.types";
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    metadata?: { name?: string; companyName?: string },
+  ) => Promise<{ error: Error | null; data?: any }>;
   signInWithGoogle: () => Promise<void>;
   signInWithGitHub: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -34,32 +39,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadUserProfile = useCallback(
     async (supabaseUser: User, session: Session) => {
       try {
-        let tenantId = supabaseUser.app_metadata?.tenant_id;
+        let actualTenantId = supabaseUser.app_metadata?.tenant_id;
 
         let tenant: Tenant | null = null;
         let role: Role | null = null;
         let permissions: string[] = [];
 
         // Fallback: if tenant_id is not in app_metadata, look it up from tenant_members
-        if (!tenantId) {
-          const { data: memberLookup } = await supabase
-            .from("tenant_members")
-            .select("tenant_id")
-            .eq("user_id", supabaseUser.id)
-            .eq("status", "active")
-            .limit(1)
-            .single();
-          if (memberLookup) {
-            tenantId = memberLookup.tenant_id;
+        // A retry mechanism is used here because the DB trigger might take a few milliseconds
+        // to associate the new user to their default tenant after signup.
+        if (!actualTenantId) {
+          let retries = 3;
+          while (retries > 0) {
+            const { data: memberLookup } = await supabase
+              .from("tenant_members")
+              .select("tenant_id")
+              .eq("user_id", supabaseUser.id)
+              .eq("status", "active")
+              .limit(1)
+              .maybeSingle();
+
+            if (memberLookup) {
+              actualTenantId = memberLookup.tenant_id;
+              break;
+            }
+
+            retries--;
+            if (retries > 0) {
+              await new Promise((resolve) => setTimeout(resolve, 800)); // Wait 800ms before retrying
+            }
           }
         }
 
-        if (tenantId) {
+        if (actualTenantId) {
           // Fetch tenant
           const { data: tenantData } = await supabase
             .from("tenants")
             .select("*")
-            .eq("id", tenantId)
+            .eq("id", actualTenantId)
             .single();
           tenant = tenantData;
 
@@ -67,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { data: memberData } = await supabase
             .from("tenant_members")
             .select("*, role:roles(*)")
-            .eq("tenant_id", tenantId)
+            .eq("tenant_id", actualTenantId)
             .eq("user_id", supabaseUser.id)
             .eq("status", "active")
             .single();
@@ -75,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (memberData?.role) {
             role = memberData.role as Role;
 
-            // Owner and Admin get ALL permissions
+            // Admin and Owner get all permissions
             if (role.name === "admin" || role.name === "owner") {
               const { data: allPerms } = await supabase
                 .from("permissions")
@@ -103,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             supabaseUser.email?.split("@")[0] ??
             "",
           avatar_url: supabaseUser.user_metadata?.avatar_url ?? null,
-          tenant_id: tenantId ?? null,
+          tenant_id: actualTenantId ?? null,
           role,
           permissions,
         };
@@ -165,6 +182,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const signUp = async (
+    email: string,
+    password: string,
+    metadata?: { name?: string; companyName?: string },
+  ) => {
+    setState((prev) => ({ ...prev, loading: true }));
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: metadata?.name,
+          companyName: metadata?.companyName,
+        },
+      },
+    });
+
+    // In local dev without SMTP, Supabase returns "Error sending confirmation email"
+    // but actualy creates the user in the database.
+    // We treat it as success to allow the flow to proceed manually.
+    if (error && error.message.includes("Error sending confirmation email")) {
+      setState((prev) => ({ ...prev, loading: false }));
+      return { error: null, data };
+    }
+
+    if (error) setState((prev) => ({ ...prev, loading: false }));
+    return { error: error as Error | null, data };
+  };
+
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -204,6 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         ...state,
         signIn,
+        signUp,
         signInWithGoogle,
         signInWithGitHub,
         signOut,

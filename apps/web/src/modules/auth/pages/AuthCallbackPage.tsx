@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { ThemeToggle } from "../../../shared/components/ui/ThemeToggle";
 
 export function AuthCallbackPage() {
   const { user, initialized } = useAuth();
@@ -17,7 +18,10 @@ export function AuthCallbackPage() {
   }, [user, initialized, navigate]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center font-sans">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center font-sans relative">
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
       <div className="flex flex-col items-center gap-4">
         <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
         <p className="text-sm font-bold tracking-widest uppercase text-muted-foreground animate-pulse">
