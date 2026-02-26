@@ -35,12 +35,12 @@ export const AppLayout: React.FC = () => {
         <div className="relative z-10 p-6 flex justify-between items-center border-b border-border/20">
           <img
             src="/images/logo-cogitari.png"
-            alt="Amuri Audit"
+            alt="Cogitari Governance"
             className="h-7 w-auto mix-blend-screen hidden dark:block"
           />
           <img
             src="/images/logo-cogitari-dark.png"
-            alt="Amuri Audit"
+            alt="Cogitari Governance"
             className="h-7 w-auto block dark:hidden"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "/images/logo-cogitari.png";
