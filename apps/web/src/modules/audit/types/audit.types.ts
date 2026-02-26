@@ -42,6 +42,7 @@ export interface AuditProgram {
   status: AuditProgramStatus;
   start_date: string | null;
   end_date: string | null;
+  project_id?: string | null;
   responsible_id: string | null;
   created_by: string;
   created_at: string;
@@ -82,6 +83,7 @@ export interface AuditFinding {
   description: string | null;
   risk_level: FindingRiskLevel;
   status: FindingStatus;
+  project_id?: string | null;
   due_date: string | null;
   assigned_to: string | null;
   created_by: string;
@@ -136,6 +138,7 @@ export interface CreateProgramInput {
   description?: string;
   framework_id?: string;
   frequency: AuditProgramFrequency;
+  project_id?: string | null;
   start_date?: string;
   end_date?: string;
 }

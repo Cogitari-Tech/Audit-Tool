@@ -43,6 +43,7 @@ export interface GitHubRepository {
   id: string;
   tenant_id: string;
   org_id: string;
+  project_id?: string | null;
   github_repo_id: number;
   full_name: string;
   name: string;
