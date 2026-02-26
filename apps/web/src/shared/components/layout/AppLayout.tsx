@@ -1,11 +1,18 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { moduleRegistry } from "../../../modules/registry";
+import { useAuth } from "../../../modules/auth/context/AuthContext";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { Menu, X, ChevronRight } from "lucide-react";
 
 export const AppLayout: React.FC = () => {
-  const navigation = moduleRegistry.getAllNavigation();
+  const { permissions, user } = useAuth();
+  const isAdmin = user?.role?.name === "admin" || user?.role?.name === "owner";
+  const navigation = isAdmin
+    ? moduleRegistry.getAllNavigation()
+    : moduleRegistry
+        .getAccessibleModules(permissions)
+        .map((m) => ({ module: m.name, items: m.navigation }));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
