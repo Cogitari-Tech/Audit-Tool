@@ -104,7 +104,7 @@ export function LoginPage() {
         </div>
 
         <div className="text-[10px] font-semibold text-muted-foreground/30 uppercase tracking-[0.4em]">
-          © 2026 Amuri Audit · Cogitari Tech
+          © 2026 Cogitari Governance · Cogitari Tech
         </div>
       </div>
 
