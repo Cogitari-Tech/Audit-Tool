@@ -3,6 +3,7 @@ import { moduleRegistry } from "./modules/registry";
 import { AppLayout } from "./shared/components/layout/AppLayout";
 import { AuthGuard } from "./modules/auth/components/AuthGuard";
 import { LoginPage } from "./modules/auth/pages/LoginPage";
+import { RegisterPage } from "./modules/auth/pages/RegisterPage";
 import { ForgotPasswordPage } from "./modules/auth/pages/ForgotPasswordPage";
 import { AcceptInvitePage } from "./modules/auth/pages/AcceptInvitePage";
 import { AuthCallbackPage } from "./modules/auth/pages/AuthCallbackPage";
@@ -15,6 +16,10 @@ export const createAppRouter = () =>
     {
       path: "/login",
       element: <LoginPage />,
+    },
+    {
+      path: "/register",
+      element: <RegisterPage />,
     },
     {
       path: "/auth/callback",
