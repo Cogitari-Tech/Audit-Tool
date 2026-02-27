@@ -80,25 +80,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .single();
           tenant = tenantData;
 
-          // Fetch member + role
+          // Fetch member (without role join — avoids PostgREST FK ambiguity)
           const { data: memberData } = await supabase
             .from("tenant_members")
-            .select("*, role:roles(*)")
+            .select("*")
             .eq("tenant_id", actualTenantId)
             .eq("user_id", supabaseUser.id)
             .eq("status", "active")
             .single();
 
-          if (memberData?.role) {
-            role = memberData.role as Role;
+          if (memberData?.role_id) {
+            // Fetch role separately
+            const { data: roleData } = await supabase
+              .from("roles")
+              .select("*")
+              .eq("id", memberData.role_id)
+              .single();
+
+            if (roleData) {
+              role = roleData as Role;
+            }
 
             // Admin and Owner get all permissions
-            if (role.name === "admin" || role.name === "owner") {
+            if (role && (role.name === "admin" || role.name === "owner")) {
               const { data: allPerms } = await supabase
                 .from("permissions")
                 .select("code");
               permissions = allPerms?.map((p) => p.code) ?? [];
-            } else {
+            } else if (role) {
               // Fetch role permissions
               const { data: rolePerms } = await supabase
                 .from("role_permissions")
