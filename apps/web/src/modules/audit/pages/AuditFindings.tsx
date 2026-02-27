@@ -35,6 +35,7 @@ const RISK_CONFIG: Record<FindingRiskLevel, { label: string; color: string }> =
   };
 
 const STATUS_LABELS: Record<FindingStatus, string> = {
+  draft: "Rascunho",
   open: "Aberto",
   in_progress: "Em Tratamento",
   resolved: "Resolvido",
@@ -62,6 +63,10 @@ export default function AuditFindings() {
     risk_level: "medium",
   });
 
+  const [editingFinding, setEditingFinding] = useState<
+    (typeof findings)[0] | null
+  >(null);
+
   const filtered = findings.filter((f) => {
     const matchSearch =
       !search ||
@@ -72,9 +77,19 @@ export default function AuditFindings() {
     return matchSearch && matchRisk && matchStatus;
   });
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     try {
-      await createFinding(form);
+      if (editingFinding) {
+        await updateFinding(editingFinding.id, {
+          ...form,
+          status:
+            editingFinding.status === "draft" ? "open" : editingFinding.status,
+          due_date: form.due_date,
+        });
+        setEditingFinding(null);
+      } else {
+        await createFinding(form);
+      }
       setShowModal(false);
       setForm({
         program_id: "",
@@ -123,7 +138,16 @@ export default function AuditFindings() {
         </div>
 
         <Button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setEditingFinding(null);
+            setForm({
+              program_id: "",
+              title: "",
+              description: "",
+              risk_level: "medium",
+            });
+            setShowModal(true);
+          }}
           variant="primary"
           className="rounded-2xl px-6 shadow-lg shadow-primary/20"
         >
@@ -282,7 +306,9 @@ export default function AuditFindings() {
                               ? "bg-emerald-500 shadow-lg shadow-emerald-500/20"
                               : finding.status === "in_progress"
                                 ? "bg-primary shadow-lg shadow-primary/20"
-                                : "bg-muted-foreground/20"
+                                : finding.status === "draft"
+                                  ? "bg-amber-500 shadow-lg shadow-amber-500/20"
+                                  : "bg-muted-foreground/20"
                           }`}
                         />
                         {STATUS_LABELS[finding.status]}
@@ -296,6 +322,25 @@ export default function AuditFindings() {
                     </td>
                     <td className="px-10 py-8 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {finding.status === "draft" && (
+                          <Button
+                            variant="primary"
+                            onClick={() => {
+                              setEditingFinding(finding);
+                              setForm({
+                                program_id: finding.program_id,
+                                title: finding.title,
+                                description: finding.description || "",
+                                risk_level: finding.risk_level,
+                                due_date: finding.due_date || undefined,
+                              });
+                              setShowModal(true);
+                            }}
+                            className="bg-amber-500 text-white hover:bg-amber-600 rounded-xl text-[10px] font-bold uppercase tracking-widest px-4 py-3 shadow-lg shadow-amber-500/20"
+                          >
+                            Consolidar
+                          </Button>
+                        )}
                         {finding.status === "open" && (
                           <Button
                             variant="ghost"
@@ -349,10 +394,12 @@ export default function AuditFindings() {
           <div className="glass-card bg-white/5 border border-white/10 rounded-[3rem] p-12 max-w-2xl w-full shadow-2xl space-y-10 relative scale-up">
             <div className="space-y-2">
               <h3 className="text-3xl font-bold text-foreground font-display tracking-tight">
-                Registrar Achado
+                {editingFinding ? "Editar Achado" : "Registrar Achado"}
               </h3>
               <p className="text-sm text-muted-foreground/60 font-medium">
-                Identifique uma nova não conformidade ou ponto de atenção.
+                {editingFinding
+                  ? "Complete as informações do achado draft para consolidá-lo."
+                  : "Identifique uma nova não conformidade ou ponto de atenção."}
               </p>
             </div>
 
@@ -447,17 +494,24 @@ export default function AuditFindings() {
             <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
               <Button
                 variant="ghost"
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingFinding(null);
+                }}
                 className="py-4 rounded-2xl bg-foreground/5 text-muted-foreground hover:bg-white hover:text-black transition-all font-bold uppercase tracking-widest text-[10px]"
               >
                 Cancelar
               </Button>
               <Button
-                onClick={handleCreate}
+                onClick={handleSave}
                 disabled={!form.program_id || !form.title || loading}
                 className="py-4 rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all font-bold uppercase tracking-widest text-[10px] px-10"
               >
-                {loading ? "Processando..." : "Registrar Achado"}
+                {loading
+                  ? "Processando..."
+                  : editingFinding
+                    ? "Salvar Achado"
+                    : "Registrar Achado"}
               </Button>
             </div>
           </div>

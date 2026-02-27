@@ -37,7 +37,7 @@ export const ThemeToggle = () => {
     <Button
       variant="ghost"
       onClick={toggleTheme}
-      className="rounded-full w-10 h-10 p-0 flex items-center justify-center text-slate-500 hover:text-brand-500 dark:text-slate-400 dark:hover:text-brand-400 transition-colors"
+      className="rounded-full w-10 h-10 p-0 flex items-center justify-center bg-background/80 backdrop-blur-md border border-border/50 shadow-sm text-slate-500 hover:text-brand-500 hover:bg-background dark:text-slate-400 dark:hover:text-brand-400 dark:hover:bg-card transition-all"
       title={`Alternar para modo ${theme === "light" ? "escuro" : "claro"}`}
     >
       {theme === "light" ? (
