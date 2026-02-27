@@ -5,7 +5,10 @@ const AuditDashboard = lazy(() => import("./pages/AuditDashboard"));
 const AuditPrograms = lazy(() => import("./pages/AuditPrograms"));
 const AuditFindings = lazy(() => import("./pages/AuditFindings"));
 const AuditActionPlans = lazy(() => import("./pages/AuditActionPlans"));
+const AuditExecution = lazy(() => import("./pages/AuditExecution"));
+const AuditApprovalView = lazy(() => import("./pages/AuditApprovalView"));
 const ReportBuilder = lazy(() => import("./pages/ReportBuilder"));
+const AuditReports = lazy(() => import("./pages/AuditReports"));
 
 export const auditModuleConfig: ModuleConfig = {
   id: "audit",
@@ -34,6 +37,16 @@ export const auditModuleConfig: ModuleConfig = {
       handle: { title: "Programas de Auditoria" },
     },
     {
+      path: "/audit/programs/:programId/execute",
+      element: <AuditExecution />,
+      handle: { title: "Execução de Auditoria" },
+    },
+    {
+      path: "/audit/programs/:programId/approve",
+      element: <AuditApprovalView />,
+      handle: { title: "Aprovação de Auditoria" },
+    },
+    {
       path: "/audit/findings",
       element: <AuditFindings />,
       handle: { title: "Achados de Auditoria" },
@@ -52,6 +65,11 @@ export const auditModuleConfig: ModuleConfig = {
       path: "/audit/report/:programId",
       element: <ReportBuilder />,
       handle: { title: "Relatório de Auditoria" },
+    },
+    {
+      path: "/audit/reports",
+      element: <AuditReports />,
+      handle: { title: "Relatórios Emitidos" },
     },
   ],
 
@@ -80,6 +98,11 @@ export const auditModuleConfig: ModuleConfig = {
       label: "Relatório",
       path: "/audit/report",
       icon: "FileOutput",
+    },
+    {
+      label: "Relatórios Emitidos",
+      path: "/audit/reports",
+      icon: "FileDown",
     },
   ],
 

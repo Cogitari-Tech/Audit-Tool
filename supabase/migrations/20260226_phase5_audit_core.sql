@@ -2,12 +2,53 @@
 -- Phase 5: Core de Execução de Auditoria 
 -- ==========================================
 
--- 1. Updates in audit_programs ENUM / Statuses
+-- Helper function to check role permissions
+CREATE OR REPLACE FUNCTION has_permission(p_permission_code text)
+RETURNS boolean AS $$
+DECLARE
+    v_has_permission boolean;
+    v_tenant_id uuid;
+BEGIN
+    -- Extract tenant_id from JWT
+    v_tenant_id := (current_setting('request.jwt.claims', true)::jsonb ->> 'tenant_id')::uuid;
+
+    IF v_tenant_id IS NULL THEN
+        RETURN false;
+    END IF;
+
+    SELECT EXISTS (
+        SELECT 1
+        FROM tenant_members tm
+        JOIN roles r ON tm.role_id = r.id
+        JOIN role_permissions rp ON r.id = rp.role_id
+        JOIN permissions p ON rp.permission_id = p.id
+        WHERE tm.user_id = auth.uid()
+          AND tm.tenant_id = v_tenant_id
+          AND p.code = p_permission_code
+    ) INTO v_has_permission;
+
+    RETURN v_has_permission;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- 1. Updates in audit_programs / Statuses
 -- (Currently, 'status' in audit_programs is 'draft', 'in_progress', 'completed', 'cancelled')
 -- We need to reflect the new workflow: Draft -> In Progress -> Under Review -> Approved -> Archived
-ALTER TYPE audit_program_status ADD VALUE IF NOT EXISTS 'under_review';
-ALTER TYPE audit_program_status ADD VALUE IF NOT EXISTS 'approved';
-ALTER TYPE audit_program_status ADD VALUE IF NOT EXISTS 'archived';
+DO $$
+DECLARE
+    const_name text;
+BEGIN
+    SELECT conname INTO const_name
+    FROM pg_constraint
+    WHERE conrelid = 'audit_programs'::regclass
+      AND pg_get_constraintdef(oid) LIKE '%status%';
+
+    IF const_name IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE audit_programs DROP CONSTRAINT ' || const_name;
+    END IF;
+END $$;
+
+ALTER TABLE audit_programs ADD CONSTRAINT audit_programs_status_check 
+CHECK (status IN ('draft', 'in_progress', 'under_review', 'approved', 'archived', 'completed', 'cancelled'));
 
 -- 2. ENUM for Response Status
 CREATE TYPE audit_response_status AS ENUM ('conforme', 'nao_conforme', 'parcial', 'n_a');
@@ -20,7 +61,7 @@ CREATE TYPE audit_response_status AS ENUM ('conforme', 'nao_conforme', 'parcial'
 CREATE TABLE IF NOT EXISTS audit_item_responses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     audit_id UUID NOT NULL REFERENCES audit_programs(id) ON DELETE CASCADE,
-    checklist_item_id UUID NOT NULL REFERENCES framework_controls(id) ON DELETE RESTRICT,
+    checklist_item_id UUID NOT NULL REFERENCES audit_program_checklists(id) ON DELETE RESTRICT,
     status audit_response_status NOT NULL,
     justification TEXT,
     responded_by UUID NOT NULL REFERENCES auth.users(id),
@@ -66,45 +107,45 @@ ALTER TABLE audit_versions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view audit responses in their tenant"
     ON audit_item_responses FOR SELECT
     USING (tenant_id IN (
-        SELECT tenant_id FROM tenant_members WHERE member_id = auth.uid()
+        SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     ));
 
 CREATE POLICY "Users with manage permission can modify audit responses"
     ON audit_item_responses FOR ALL
     USING (
         tenant_id IN (
-            SELECT tenant_id FROM tenant_members WHERE member_id = auth.uid()
-        ) AND has_permission('audits.manage')
+            SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+        ) AND has_permission('audit.edit')
     );
 
 -- Evidências (Evidences)
 CREATE POLICY "Users can view audit evidences in their tenant"
     ON audit_item_evidences FOR SELECT
     USING (tenant_id IN (
-        SELECT tenant_id FROM tenant_members WHERE member_id = auth.uid()
+        SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     ));
 
 CREATE POLICY "Users with manage permission can modify audit evidences"
     ON audit_item_evidences FOR ALL
     USING (
         tenant_id IN (
-            SELECT tenant_id FROM tenant_members WHERE member_id = auth.uid()
-        ) AND has_permission('audits.manage')
+            SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+        ) AND has_permission('audit.edit')
     );
 
 -- Versões (Versions)
 CREATE POLICY "Users can view audit versions in their tenant"
     ON audit_versions FOR SELECT
     USING (tenant_id IN (
-        SELECT tenant_id FROM tenant_members WHERE member_id = auth.uid()
+        SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
     ));
 
 CREATE POLICY "Users with manage permission can create audit versions"
     ON audit_versions FOR INSERT
     WITH CHECK (
         tenant_id IN (
-            SELECT tenant_id FROM tenant_members WHERE member_id = auth.uid()
-        ) AND has_permission('audits.manage')
+            SELECT tenant_id FROM tenant_members WHERE user_id = auth.uid()
+        ) AND has_permission('audit.edit')
     );
 
 -- ==========================================
@@ -112,18 +153,22 @@ CREATE POLICY "Users with manage permission can create audit versions"
 -- ==========================================
 
 -- Define a 'draft' status for Findings if it doesn't exist.
--- Assuming `audit_finding_status` is an ENUM. Let's ensure 'draft' is there.
 DO $$
+DECLARE
+    const_name text;
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'audit_finding_status') THEN
-        -- Saftey check: if it's text we just insert. If it's enum we alter.
-        -- Assuming Amuri Audit legacy used string literals in the UI or a specific Enum.
-    ELSE
-        ALTER TYPE audit_finding_status ADD VALUE IF NOT EXISTS 'draft';
+    SELECT conname INTO const_name
+    FROM pg_constraint
+    WHERE conrelid = 'audit_findings'::regclass
+      AND pg_get_constraintdef(oid) LIKE '%status%';
+
+    IF const_name IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE audit_findings DROP CONSTRAINT ' || const_name;
     END IF;
-EXCEPTION
-    WHEN duplicate_object THEN null;
 END $$;
+
+ALTER TABLE audit_findings ADD CONSTRAINT audit_findings_status_check 
+CHECK (status IN ('draft', 'open', 'in_progress', 'resolved', 'accepted'));
 
 -- The trigger function
 CREATE OR REPLACE FUNCTION trigger_auto_create_finding()
@@ -189,7 +234,7 @@ ON storage.objects FOR SELECT
 USING (
   bucket_id = 'audit-evidences' AND
   (auth.uid() IN (
-    SELECT member_id FROM tenant_members 
+    SELECT user_id FROM tenant_members 
     WHERE tenant_id::text = (storage.foldername(name))[1]
   ))
 );
@@ -199,7 +244,7 @@ ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'audit-evidences' AND
   (auth.uid() IN (
-    SELECT member_id FROM tenant_members 
+    SELECT user_id FROM tenant_members 
     WHERE tenant_id::text = (storage.foldername(name))[1]
   ))
 );
