@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { ShieldCheck, Database, Activity } from "lucide-react";
 import { ThemeToggle } from "../../../shared/components/ui/ThemeToggle";
 
@@ -140,7 +140,11 @@ export function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-6"
+            autoComplete="off"
+          >
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 px-4 py-3 rounded-xl text-sm text-destructive font-medium animate-in fade-in slide-in-from-top-1">
                 {error}
@@ -159,6 +163,7 @@ export function LoginPage() {
                   id="email"
                   type="email"
                   required
+                  autoComplete="off"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu.nome@cogitari.com.br"
@@ -174,18 +179,19 @@ export function LoginPage() {
                   >
                     Senha de segurança
                   </label>
-                  <a
-                    href="/forgot-password"
+                  <Link
+                    to="/forgot-password"
                     title="Recuperar senha"
                     className="text-[11px] font-bold text-primary hover:brightness-110 transition-all uppercase tracking-widest"
                   >
                     Esqueci minha senha
-                  </a>
+                  </Link>
                 </div>
                 <input
                   id="password"
                   type="password"
                   required
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
