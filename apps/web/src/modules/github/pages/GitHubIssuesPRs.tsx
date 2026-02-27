@@ -328,7 +328,7 @@ export default function GitHubIssuesPRs() {
 function PRStateIcon({ state }: { state: string }) {
   if (state === "merged")
     return (
-      <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-500 flex-shrink-0">
+      <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 flex-shrink-0">
         <GitPullRequest className="w-4 h-4" />
       </div>
     );
