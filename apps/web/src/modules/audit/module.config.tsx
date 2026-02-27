@@ -9,6 +9,7 @@ const AuditExecution = lazy(() => import("./pages/AuditExecution"));
 const AuditApprovalView = lazy(() => import("./pages/AuditApprovalView"));
 const ReportBuilder = lazy(() => import("./pages/ReportBuilder"));
 const AuditReports = lazy(() => import("./pages/AuditReports"));
+const AuditAnalytics = lazy(() => import("./pages/AuditAnalytics"));
 
 export const auditModuleConfig: ModuleConfig = {
   id: "audit",
@@ -71,6 +72,11 @@ export const auditModuleConfig: ModuleConfig = {
       element: <AuditReports />,
       handle: { title: "Relatórios Emitidos" },
     },
+    {
+      path: "/audit/analytics",
+      element: <AuditAnalytics />,
+      handle: { title: "Analytics" },
+    },
   ],
 
   navigation: [
@@ -103,6 +109,11 @@ export const auditModuleConfig: ModuleConfig = {
       label: "Relatórios Emitidos",
       path: "/audit/reports",
       icon: "FileDown",
+    },
+    {
+      label: "Analytics",
+      path: "/audit/analytics",
+      icon: "BarChart3",
     },
   ],
 
