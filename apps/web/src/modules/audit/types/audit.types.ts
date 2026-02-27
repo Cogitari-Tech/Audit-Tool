@@ -136,7 +136,7 @@ export interface AuditFinding {
   created_at: string;
   resolved_at: string | null;
   source_type?: "manual" | "github";
-  source_ref?: string;
+  source_url?: string;
   // Joined
   program?: AuditProgram;
 }
@@ -196,6 +196,8 @@ export interface CreateFindingInput {
   description?: string;
   risk_level: FindingRiskLevel;
   due_date?: string;
+  source_type?: "manual" | "github";
+  source_url?: string;
 }
 
 export interface CreateActionPlanInput {
