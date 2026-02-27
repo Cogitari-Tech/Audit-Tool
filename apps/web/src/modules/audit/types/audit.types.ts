@@ -29,6 +29,9 @@ export type AuditProgramFrequency =
 export type AuditProgramStatus =
   | "draft"
   | "in_progress"
+  | "under_review"
+  | "approved"
+  | "archived"
   | "completed"
   | "cancelled";
 
@@ -72,8 +75,51 @@ export interface AuditProgramChecklist {
   control?: AuditFrameworkControl;
 }
 
+export type AuditResponseStatus =
+  | "conforme"
+  | "nao_conforme"
+  | "parcial"
+  | "n_a";
+
+export interface AuditItemResponse {
+  id: string;
+  audit_id: string;
+  checklist_item_id: string;
+  status: AuditResponseStatus;
+  justification: string | null;
+  responded_by: string;
+  responded_at: string;
+  tenant_id: string;
+}
+
+export interface AuditItemEvidence {
+  id: string;
+  audit_item_response_id: string;
+  file_path: string;
+  file_name: string;
+  uploaded_by: string;
+  uploaded_at: string;
+  tenant_id: string;
+}
+
+export interface AuditVersion {
+  id: string;
+  audit_id: string;
+  version_number: number;
+  pdf_path: string | null;
+  doc_hash: string;
+  approved_by: string;
+  approved_at: string;
+  tenant_id: string;
+}
+
 export type FindingRiskLevel = "critical" | "high" | "medium" | "low";
-export type FindingStatus = "open" | "in_progress" | "resolved" | "accepted";
+export type FindingStatus =
+  | "draft"
+  | "open"
+  | "in_progress"
+  | "resolved"
+  | "accepted";
 
 export interface AuditFinding {
   id: string;
@@ -90,7 +136,7 @@ export interface AuditFinding {
   created_at: string;
   resolved_at: string | null;
   source_type?: "manual" | "github";
-  source_ref?: string;
+  source_url?: string;
   // Joined
   program?: AuditProgram;
 }
@@ -150,6 +196,8 @@ export interface CreateFindingInput {
   description?: string;
   risk_level: FindingRiskLevel;
   due_date?: string;
+  source_type?: "manual" | "github";
+  source_url?: string;
 }
 
 export interface CreateActionPlanInput {
