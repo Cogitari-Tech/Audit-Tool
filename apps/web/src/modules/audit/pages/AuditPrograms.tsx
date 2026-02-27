@@ -49,7 +49,7 @@ const STATUS_CONFIG: Record<
   },
   approved: {
     label: "Aprovado",
-    color: "text-violet-500 border-violet-500/20 bg-violet-500/5 shadow-sm",
+    color: "text-sky-500 border-sky-500/20 bg-sky-500/5 shadow-sm",
   },
   archived: {
     label: "Arquivado",

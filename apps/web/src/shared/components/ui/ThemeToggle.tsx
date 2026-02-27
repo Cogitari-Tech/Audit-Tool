@@ -37,13 +37,18 @@ export const ThemeToggle = () => {
     <Button
       variant="ghost"
       onClick={toggleTheme}
-      className="rounded-full w-10 h-10 p-0 flex items-center justify-center bg-background/80 backdrop-blur-md border border-border/50 shadow-sm text-slate-500 hover:text-brand-500 hover:bg-background dark:text-slate-400 dark:hover:text-brand-400 dark:hover:bg-card transition-all"
+      className={`relative overflow-hidden rounded-full w-10 h-10 p-0 flex items-center justify-center transition-all duration-300 shadow-sm border
+        ${
+          theme === "light"
+            ? "bg-white border-slate-200 text-amber-500 hover:bg-slate-50 hover:text-amber-600 hover:border-amber-200"
+            : "bg-slate-800 border-slate-700 text-brand-400 hover:bg-slate-700 hover:text-brand-300 hover:border-brand-500/50"
+        }`}
       title={`Alternar para modo ${theme === "light" ? "escuro" : "claro"}`}
     >
       {theme === "light" ? (
-        <Moon className="w-5 h-5" />
+        <Moon className="w-5 h-5 transition-transform hover:-rotate-12" />
       ) : (
-        <Sun className="w-5 h-5" />
+        <Sun className="w-5 h-5 transition-transform hover:rotate-90 duration-500" />
       )}
     </Button>
   );
