@@ -314,10 +314,16 @@ export default function AuditFindings() {
                         {STATUS_LABELS[finding.status]}
                       </span>
                       {finding.source_type === "github" && (
-                        <span className="flex items-center gap-1 mt-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                        <a
+                          href={finding.source_url || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 mt-3 px-2 py-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-md text-[9px] font-bold uppercase tracking-widest transition-colors w-fit"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Github className="w-3 h-3" />
-                          {finding.source_ref?.split("#")[0] ?? "GitHub"}
-                        </span>
+                          Ver Alerta Original
+                        </a>
                       )}
                     </td>
                     <td className="px-10 py-8 text-right">

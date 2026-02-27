@@ -1,8 +1,23 @@
+import { useState } from "react";
 import { useGitHub } from "../hooks/useGitHub";
-import { ShieldAlert, Bug, KeyRound, ScanEye, RefreshCw } from "lucide-react";
+import {
+  ShieldAlert,
+  Bug,
+  KeyRound,
+  ScanEye,
+  RefreshCw,
+  FileText,
+  CheckCircle2,
+} from "lucide-react";
+import { ConvertAlertToFindingModal } from "../components/ConvertAlertToFindingModal";
+import type { GitHubSecurityAlert } from "../types/github.types";
+import { Link } from "react-router-dom";
 
 export default function GitHubSecurity() {
-  const { securityAlerts, loading, loadSecurityAlerts } = useGitHub();
+  const { securityAlerts, loading, loadSecurityAlerts, linkAlertToFinding } =
+    useGitHub();
+  const [selectedAlert, setSelectedAlert] =
+    useState<GitHubSecurityAlert | null>(null);
 
   const dependabot = securityAlerts.filter(
     (a) => a.alert_type === "dependabot",
@@ -145,7 +160,7 @@ export default function GitHubSecurity() {
                   </div>
                 </div>
 
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 flex flex-col items-end gap-2">
                   <span
                     className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${
                       alert.state === "open"
@@ -155,12 +170,44 @@ export default function GitHubSecurity() {
                   >
                     {alert.state === "open" ? "Aberto" : "Resolvido"}
                   </span>
+
+                  {alert.state === "open" && !alert.linked_finding_id && (
+                    <button
+                      onClick={() => setSelectedAlert(alert)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 mt-2 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      Criar Apontamento
+                    </button>
+                  )}
+
+                  {alert.linked_finding_id && (
+                    <Link
+                      to={`/audit`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 mt-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg transition-colors"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Vinculado
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {selectedAlert && (
+        <ConvertAlertToFindingModal
+          isOpen={true}
+          onClose={() => setSelectedAlert(null)}
+          alert={selectedAlert}
+          onSuccess={async (findingId) => {
+            await linkAlertToFinding(selectedAlert.id, findingId);
+            setSelectedAlert(null);
+          }}
+        />
+      )}
     </div>
   );
 }

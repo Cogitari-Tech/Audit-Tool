@@ -284,6 +284,31 @@ export function useGitHub() {
     }
   };
 
+  const linkAlertToFinding = async (alertId: string, findingId: string) => {
+    setLoading(true);
+    try {
+      const { error: err } = await supabase
+        .from("github_security_alerts")
+        .update({ linked_finding_id: findingId })
+        .eq("id", alertId);
+
+      if (err) throw err;
+
+      // Update local state optimistic
+      setSecurityAlerts((prev) =>
+        prev.map((a) =>
+          a.id === alertId ? { ...a, linked_finding_id: findingId } : a,
+        ),
+      );
+    } catch (err: any) {
+      console.error("Failed to link Alert:", err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     // Data
     installations,
@@ -311,5 +336,6 @@ export function useGitHub() {
     createIssue,
     closeIssue,
     linkPullRequestToFinding,
+    linkAlertToFinding,
   };
 }
