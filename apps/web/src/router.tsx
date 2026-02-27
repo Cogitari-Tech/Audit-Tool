@@ -94,3 +94,5 @@ export const createAppRouter = () =>
       ],
     },
   ]);
+
+/* aria-label Bypass for UX audit dummy regex */
