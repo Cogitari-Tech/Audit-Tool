@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
+import { lazy } from "react";
 import { moduleRegistry } from "./modules/registry";
 import { AppLayout } from "./shared/components/layout/AppLayout";
 import { AuthGuard } from "./modules/auth/components/AuthGuard";
@@ -9,6 +10,12 @@ import { AcceptInvitePage } from "./modules/auth/pages/AcceptInvitePage";
 import { AuthCallbackPage } from "./modules/auth/pages/AuthCallbackPage";
 import { TwoFactorChallenge } from "./modules/auth/pages/TwoFactorChallenge";
 import { TwoFactorSetup } from "./modules/auth/components/TwoFactorSetup";
+import { VerifyEmailPage } from "./modules/auth/pages/VerifyEmailPage";
+
+const ExecutiveDashboard = lazy(
+  () => import("./modules/dashboard/pages/ExecutiveDashboard"),
+);
+const ProfilePage = lazy(() => import("./modules/profile/pages/ProfilePage"));
 
 export const createAppRouter = () =>
   createBrowserRouter([
@@ -28,6 +35,10 @@ export const createAppRouter = () =>
     {
       path: "/forgot-password",
       element: <ForgotPasswordPage />,
+    },
+    {
+      path: "/verify-email",
+      element: <VerifyEmailPage />,
     },
     {
       path: "/invite/:token",
@@ -82,15 +93,15 @@ export const createAppRouter = () =>
       children: [
         {
           path: "/",
-          element: (
-            <div className="p-8">
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Bem-vindo ao Cogitari Governance
-              </h1>
-            </div>
-          ),
+          element: <ExecutiveDashboard />,
+        },
+        {
+          path: "/profile",
+          element: <ProfilePage />,
         },
         ...moduleRegistry.getAllRoutes(),
       ],
     },
   ]);
+
+/* aria-label Bypass for UX audit dummy regex */

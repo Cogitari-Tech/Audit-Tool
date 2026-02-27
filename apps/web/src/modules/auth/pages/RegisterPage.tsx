@@ -2,11 +2,11 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Navigate, Link } from "react-router-dom";
 import { ShieldCheck, Database } from "lucide-react";
-import { supabase } from "../../../config/supabase";
+
 import { ThemeToggle } from "../../../shared/components/ui/ThemeToggle";
 
 export function RegisterPage() {
-  const { signUp, signIn, signInWithGoogle, signInWithGitHub, user, loading } =
+  const { signUp, signInWithGoogle, signInWithGitHub, user, loading } =
     useAuth();
 
   const [name, setName] = useState("");
@@ -15,10 +15,14 @@ export function RegisterPage() {
   const [companyName, setCompanyName] = useState("");
 
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // If already logged in, redirect
   if (user) return <Navigate to="/" replace />;
+
+  // If registration succeeded, redirect to verify-email page
+  if (success) return <Navigate to="/verify-email" replace />;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -32,7 +36,6 @@ export function RegisterPage() {
     }
 
     try {
-      // Create user and pass metadata for the trigger to use
       const { error: authError } = await signUp(email, password, {
         name,
         companyName,
@@ -42,17 +45,9 @@ export function RegisterPage() {
         throw authError;
       }
 
-      // Auto-login to bypass the confirmation requirement in local dev
-      // Ensure any existing stale session (e.g. teste@cogitari.com.br) is completely removed first
-      await supabase.auth.signOut();
-      const { error: loginError } = await signIn(email, password);
-
-      if (loginError) {
-        // Fallback message if login also fails (e.g. if Supabase strictly blocks unconfirmed emails on sign in)
-        setError(
-          "Conta criada com sucesso! Por favor, confirme seu e-mail para acessar.",
-        );
-      }
+      // Registration successful — do NOT auto-login.
+      // The user must confirm their email before accessing the system.
+      setSuccess(true);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Erro ao criar conta. Tente novamente.");
