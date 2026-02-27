@@ -9,6 +9,7 @@ import { AcceptInvitePage } from "./modules/auth/pages/AcceptInvitePage";
 import { AuthCallbackPage } from "./modules/auth/pages/AuthCallbackPage";
 import { TwoFactorChallenge } from "./modules/auth/pages/TwoFactorChallenge";
 import { TwoFactorSetup } from "./modules/auth/components/TwoFactorSetup";
+import { VerifyEmailPage } from "./modules/auth/pages/VerifyEmailPage";
 
 export const createAppRouter = () =>
   createBrowserRouter([
@@ -28,6 +29,10 @@ export const createAppRouter = () =>
     {
       path: "/forgot-password",
       element: <ForgotPasswordPage />,
+    },
+    {
+      path: "/verify-email",
+      element: <VerifyEmailPage />,
     },
     {
       path: "/invite/:token",
