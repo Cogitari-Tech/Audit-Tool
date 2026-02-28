@@ -8,20 +8,36 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../../../config/supabase";
-import type { AuthState, AuthUser, Tenant, Role } from "../types/auth.types";
+import type {
+  AuthState,
+  AuthUser,
+  Tenant,
+  Role,
+  SignupMode,
+} from "../types/auth.types";
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (
     email: string,
     password: string,
-    metadata?: { name?: string; companyName?: string },
+    metadata?: {
+      name?: string;
+      companyName?: string;
+      signup_mode?: SignupMode;
+      invite_token?: string;
+    },
   ) => Promise<{ error: Error | null; data?: any }>;
   signInWithGoogle: () => Promise<void>;
   signInWithGitHub: () => Promise<void>;
   signOut: () => Promise<void>;
   can: (permission: string) => boolean;
   hasRole: (roleName: string) => boolean;
+  searchTenants: (query: string) => Promise<Tenant[]>;
+  requestAccess: (
+    tenantId: string,
+    message?: string,
+  ) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -194,7 +210,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (
     email: string,
     password: string,
-    metadata?: { name?: string; companyName?: string },
+    metadata?: {
+      name?: string;
+      companyName?: string;
+      signup_mode?: SignupMode;
+      invite_token?: string;
+    },
   ) => {
     setState((prev) => ({ ...prev, loading: true }));
     const { data, error } = await supabase.auth.signUp({
@@ -204,13 +225,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           name: metadata?.name,
           companyName: metadata?.companyName,
+          signup_mode: metadata?.signup_mode || "create",
+          invite_token: metadata?.invite_token,
         },
       },
     });
 
-    // In local dev without SMTP, Supabase returns "Error sending confirmation email"
-    // but actualy creates the user in the database.
-    // We treat it as success to allow the flow to proceed manually.
     if (error && error.message.includes("Error sending confirmation email")) {
       setState((prev) => ({ ...prev, loading: false }));
       return { error: null, data };
@@ -265,6 +285,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         can,
         hasRole,
+        searchTenants: async (query: string): Promise<Tenant[]> => {
+          const { data } = await supabase
+            .from("tenants")
+            .select("*")
+            .or(`slug.ilike.%${query}%,name.ilike.%${query}%`)
+            .eq("is_private", false)
+            .limit(10);
+          return (data ?? []) as Tenant[];
+        },
+        requestAccess: async (tenantId: string, message?: string) => {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (!user) return { error: new Error("Não autenticado") };
+          const { error } = await supabase.from("access_requests").insert({
+            tenant_id: tenantId,
+            user_id: user.id,
+            message: message || null,
+          });
+          return { error: error as Error | null };
+        },
       }}
     >
       {children}
