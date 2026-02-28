@@ -11,11 +11,15 @@ import { AuthCallbackPage } from "./modules/auth/pages/AuthCallbackPage";
 import { TwoFactorChallenge } from "./modules/auth/pages/TwoFactorChallenge";
 import { TwoFactorSetup } from "./modules/auth/components/TwoFactorSetup";
 import { VerifyEmailPage } from "./modules/auth/pages/VerifyEmailPage";
+import { PendingApprovalPage } from "./modules/auth/pages/PendingApprovalPage";
 
 const ExecutiveDashboard = lazy(
   () => import("./modules/dashboard/pages/ExecutiveDashboard"),
 );
 const ProfilePage = lazy(() => import("./modules/profile/pages/ProfilePage"));
+const OnboardingWizard = lazy(
+  () => import("./modules/admin/pages/OnboardingWizard"),
+);
 
 export const createAppRouter = () =>
   createBrowserRouter([
@@ -39,6 +43,10 @@ export const createAppRouter = () =>
     {
       path: "/verify-email",
       element: <VerifyEmailPage />,
+    },
+    {
+      path: "/pending-approval",
+      element: <PendingApprovalPage />,
     },
     {
       path: "/invite/:token",
@@ -79,6 +87,15 @@ export const createAppRouter = () =>
               </div>
             </div>
           </div>
+        </AuthGuard>
+      ),
+    },
+    // Onboarding (Auth required, standalone layout — no sidebar)
+    {
+      path: "/onboarding",
+      element: (
+        <AuthGuard>
+          <OnboardingWizard />
         </AuthGuard>
       ),
     },
