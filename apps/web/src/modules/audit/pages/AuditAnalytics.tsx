@@ -48,8 +48,23 @@ export default function AuditAnalytics() {
 
   if (loading && !hasData) {
     return (
-      <div className="p-8 flex items-center justify-center h-64 text-muted-foreground font-medium uppercase tracking-widest text-xs">
-        Carregando analytics...
+      <div className="space-y-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-8 h-1 bg-primary rounded-full" />
+              <h1 className="text-4xl font-bold tracking-tight font-display">
+                Analytics
+              </h1>
+            </div>
+            <p className="text-muted-foreground font-medium">
+              Carregando indicadores...
+            </p>
+          </div>
+        </div>
+        <div className="h-64 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        </div>
       </div>
     );
   }
