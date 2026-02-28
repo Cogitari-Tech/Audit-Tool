@@ -192,8 +192,33 @@ export default function AuditExecution() {
 
   if (!program) {
     return (
-      <div className="flex items-center justify-center p-12">
-        Carregando auditoria...
+      <div className="space-y-10 pb-20">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <button
+              onClick={() => navigate("/audit/programs")}
+              className="flex items-center gap-2 text-sm text-muted-foreground/60 hover:text-foreground font-bold uppercase tracking-widest mb-4 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" /> Voltar
+            </button>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                <ClipboardCheck className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight font-display mb-1">
+                  Execução do Checklist
+                </h1>
+                <p className="text-muted-foreground font-medium text-sm">
+                  Carregando programa...
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="h-64 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        </div>
       </div>
     );
   }
