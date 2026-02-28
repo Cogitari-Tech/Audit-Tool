@@ -184,7 +184,7 @@ export const AppLayout: React.FC = () => {
           <button
             onClick={async () => {
               await signOut();
-              navigate("/login", { replace: true });
+              navigate("/", { replace: true });
             }}
             title={isCollapsed ? "Sair" : undefined}
             className="flex items-center gap-3 w-full p-2 rounded-xl text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition-colors"
