@@ -7,15 +7,23 @@ on:
       - develop
       - beta
       - main
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   security:
     name: 🔒 Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
 
@@ -23,13 +31,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
 
       - name: Run Security Scan
-        run: node scripts/security-scan.js
+        run: npm run security-check
+
+      - name: Dependency Audit (High/Critical)
+        run: npm audit --audit-level=high
 
   lint-and-typecheck:
     name: 🧹 Lint & Type Check
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -48,10 +64,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Format Check
+        run: npm run format:check
+
   test:
     name: 🧪 Tests
     runs-on: ubuntu-latest
     needs: [lint-and-typecheck]
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
 
@@ -71,6 +91,7 @@ jobs:
     name: 🏗️ Build
     runs-on: ubuntu-latest
     needs: [test, security]
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -87,7 +108,7 @@ jobs:
         run: npm run build
 
       - name: Upload Build Artifacts
-        if: github.base_ref == 'main' || github.base_ref == 'beta'
+        if: github.base_ref == 'beta'
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ github.sha }}
