@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 import { logger } from "hono/logger";
 import runwayRoutes from "./routes/finance/runway";
 import unitEconomicsRoutes from "./routes/finance/unit-economics";
@@ -19,6 +20,8 @@ import headcountRoutes from "./routes/people/headcount";
 
 const app = new Hono();
 
+// Security: Add crucial security headers to all responses
+app.use("*", secureHeaders());
 app.use("*", logger());
 app.use(
   "*",
