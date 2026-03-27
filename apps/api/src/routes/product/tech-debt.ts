@@ -140,11 +140,20 @@ techDebtRoutes.get("/", async (c) => {
     });
 
     // Calculate a naive Tech Debt Health Score (100 is perfect)
-    let score = 100;
-    const criticals = items.filter((i) => i.severity === "critical").length;
-    const highs = items.filter((i) => i.severity === "high").length;
-    const mediums = items.filter((i) => i.severity === "medium").length;
+    // ⚡ Bolt: Single pass reduction to optimize multiple O(N) filters into O(N)
+    const { criticals, highs, mediums, unreviewedPrs } = items.reduce(
+      (acc, i) => {
+        if (i.severity === "critical") acc.criticals++;
+        else if (i.severity === "high") acc.highs++;
+        else if (i.severity === "medium") acc.mediums++;
 
+        if (i.type === "unreviewed_pr") acc.unreviewedPrs++;
+        return acc;
+      },
+      { criticals: 0, highs: 0, mediums: 0, unreviewedPrs: 0 },
+    );
+
+    let score = 100;
     score -= criticals * 10;
     score -= highs * 5;
     score -= mediums * 2;
@@ -155,7 +164,7 @@ techDebtRoutes.get("/", async (c) => {
       totals: {
         securityAlerts: alerts?.length || 0,
         staleIssues: issues?.length || 0,
-        unreviewedPrs: items.filter((i) => i.type === "unreviewed_pr").length,
+        unreviewedPrs,
       },
       items,
     });
